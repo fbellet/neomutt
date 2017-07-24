@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Wrapper around calls to external PGP program
+ *
+ * @authors
  * Copyright (C) 1997-2003 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -39,24 +44,25 @@
 #include "protos.h"
 #include "rfc822.h"
 
-/*
+/**
+ * struct PgpCommandContext - Data for a PGP command
+ *
  * The actual command line formatter.
  */
-
 struct PgpCommandContext
 {
-  short need_passphrase; /* %p */
-  const char *fname;     /* %f */
-  const char *sig_fname; /* %s */
-  const char *signas;    /* %a */
-  const char *ids;       /* %r */
+  short need_passphrase; /**< %p */
+  const char *fname;     /**< %f */
+  const char *sig_fname; /**< %s */
+  const char *signas;    /**< %a */
+  const char *ids;       /**< %r */
 };
 
 static const char *_mutt_fmt_pgp_command(char *dest, size_t destlen, size_t col,
                                          int cols, char op, const char *src,
                                          const char *prefix, const char *ifstring,
                                          const char *elsestring,
-                                         unsigned long data, format_flag flags)
+                                         unsigned long data, enum FormatFlag flags)
 {
   char fmt[16];
   struct PgpCommandContext *cctx = (struct PgpCommandContext *) data;
@@ -131,9 +137,9 @@ static const char *_mutt_fmt_pgp_command(char *dest, size_t destlen, size_t col,
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, _mutt_fmt_pgp_command, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, ifstring, _mutt_fmt_pgp_command, data, 0);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, _mutt_fmt_pgp_command, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, elsestring, _mutt_fmt_pgp_command, data, 0);
 
   return src;
 }
@@ -141,7 +147,7 @@ static const char *_mutt_fmt_pgp_command(char *dest, size_t destlen, size_t col,
 static void mutt_pgp_command(char *d, size_t dlen,
                              struct PgpCommandContext *cctx, const char *fmt)
 {
-  mutt_FormatString(d, dlen, 0, MuttIndexWindow->cols, NONULL(fmt),
+  mutt_expando_format(d, dlen, 0, MuttIndexWindow->cols, NONULL(fmt),
                     _mutt_fmt_pgp_command, (unsigned long) cctx, 0);
   mutt_debug(2, "mutt_pgp_command: %s\n", d);
 }
@@ -178,7 +184,6 @@ static pid_t pgp_invoke(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpinfd,
  * The exported interface.
  *
  * This is historic and may be removed at some point.
- *
  */
 
 pid_t pgp_invoke_decode(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpinfd,
@@ -310,7 +315,7 @@ pid_t pgp_invoke_verify_key(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpi
 
 pid_t pgp_invoke_list_keys(FILE **pgpin, FILE **pgpout, FILE **pgperr,
                            int pgpinfd, int pgpoutfd, int pgperrfd,
-                           pgp_ring_t keyring, struct List *hints)
+                           enum PgpRing keyring, struct List *hints)
 {
   char uids[HUGE_STRING];
   char tmpuids[HUGE_STRING];

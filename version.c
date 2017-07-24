@@ -1,8 +1,13 @@
 /**
+ * @file
+ * Display version and copyright about NeoMutt
+ *
+ * @authors
  * Copyright (C) 1996-2007 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1999-2007 Thomas Roessler <roessler@does-not-exist.org>
  * Copyright (C) 2016-2017 Richard Russon <rich@flatcap.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -29,9 +34,7 @@
 #elif defined(HAVE_IDN_STRINGPREP_H)
 #include <idn/stringprep.h>
 #endif
-#ifdef USE_SLANG_CURSES
-#include <slang.h>
-#endif
+#include "mutt_curses.h"
 
 /* #include "protos.h" */
 const char *mutt_make_version(void);
@@ -88,6 +91,9 @@ static const char *Notice =
        "Mutt is free software, and you are welcome to redistribute it\n"
        "under certain conditions; type `mutt -vv' for details.\n");
 
+/**
+ * struct CompileOptions - List of built-in capabilities
+ */
 struct CompileOptions
 {
   const char *name;
@@ -95,8 +101,43 @@ struct CompileOptions
 };
 
 /* These are sorted by the display string */
-static struct CompileOptions comp_opts[] = {
+
+static struct CompileOptions comp_opts_default[] = {
   { "attach_headers_color", 1 },
+  { "compose_to_sender", 1 },
+  { "compress", 1 },
+  { "cond_date", 1 },
+  { "encrypt_to_self", 1 },
+  { "forgotten_attachments", 1 },
+  { "forwref", 1 },
+  { "ifdef", 1 },
+  { "imap", 1 },
+  { "index_color", 1 },
+  { "initials", 1 },
+  { "keywords", 1 },
+  { "limit_current_thread", 1 },
+  { "lmdb", 1 },
+  { "multiple_fcc", 1 },
+  { "nested_if", 1 },
+  { "new_mail", 1 },
+  { "nntp", 1 },
+  { "pop", 1 },
+  { "progress", 1 },
+  { "quasi_delete", 1 },
+  { "regcomp", 1 },
+  { "reply_with_xorig", 1 },
+  { "sensible_browser", 1 },
+  { "sidebar", 1 },
+  { "skip_quoted", 1 },
+  { "smtp", 1 },
+  { "status_color", 1 },
+  { "timeout", 1 },
+  { "tls_sni", 1 },
+  { "trash", 1 },
+  { NULL, 0 },
+};
+
+static struct CompileOptions comp_opts[] = {
 #ifdef HAVE_BKGDSET
   { "bkgdset", 1 },
 #else
@@ -107,9 +148,6 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "color", 0 },
 #endif
-  { "compose_to_sender", 1 },
-  { "compress", 1 },
-  { "cond_date", 1 },
 #ifdef HAVE_CURS_SET
   { "curs_set", 1 },
 #else
@@ -120,7 +158,6 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "debug", 0 },
 #endif
-  { "encrypt_to_self", 1 },
 #ifdef USE_FCNTL
   { "fcntl", 1 },
 #else
@@ -136,8 +173,6 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "fmemopen", 0 },
 #endif
-  { "forgotten_attachments", 1 },
-  { "forwref", 1 },
 #ifdef HAVE_FUTIMENS
   { "futimens", 1 },
 #else
@@ -178,18 +213,11 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "iconv_nontrans", 0 },
 #endif
-  { "ifdef", 1 },
-  { "imap", 1 },
-  { "index_color", 1 },
-  { "initials", 1 },
-  { "keywords", 1 },
 #ifdef HAVE_LIBIDN
   { "idn", 1 },
 #else
   { "idn", 0 },
 #endif
-  { "limit_current_thread", 1 },
-  { "lmdb", 1 },
 #ifdef LOCALES_HACK
   { "locales_hack", 1 },
 #else
@@ -210,15 +238,11 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "mixmaster", 0 },
 #endif
-  { "multiple_fcc", 1 },
-  { "nested_if", 1 },
-  { "new_mail", 1 },
 #ifdef ENABLE_NLS
   { "nls", 1 },
 #else
   { "nls", 0 },
 #endif
-  { "nntp", 1 },
 #ifdef USE_NOTMUCH
   { "notmuch", 1 },
 #else
@@ -234,11 +258,6 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "pgp", 0 },
 #endif
-  { "pop", 1 },
-  { "progress", 1 },
-  { "quasi_delete", 1 },
-  { "regcomp", 1 },
-  { "reply_with_xorig", 1 },
 #ifdef HAVE_RESIZETERM
   { "resizeterm", 1 },
 #else
@@ -249,27 +268,19 @@ static struct CompileOptions comp_opts[] = {
 #else
   { "sasl", 0 },
 #endif
-  { "sensible_browser", 1 },
-  { "sidebar", 1 },
-  { "skip_quoted", 1 },
 #ifdef CRYPT_BACKEND_CLASSIC_SMIME
   { "smime", 1 },
 #else
   { "smime", 0 },
 #endif
-  { "smtp", 1 },
 #ifdef HAVE_START_COLOR
   { "start_color", 1 },
 #else
   { "start_color", 0 },
 #endif
-  { "status_color", 1 },
 #ifdef SUN_ATTACHMENT
   { "sun_attachment", 1 },
 #endif
-  { "timeout", 1 },
-  { "tls_sni", 1 },
-  { "trash", 1 },
 #ifdef HAVE_TYPEAHEAD
   { "typeahead", 1 },
 #else
@@ -284,43 +295,45 @@ static struct CompileOptions comp_opts[] = {
 };
 
 /**
- * print_compile_options - Print a list of enabled/disabled features
+ * print_compile_options - Print a list of enabled/disabled features.
  *
- * The configure script lets uses enable/disable features.
- * This shows the Mutt user which features are/aren't available.
+ * Two lists are generated and passed to this function:
+ *
+ * One list which just uses the configure state of each feature.
+ * One list which just uses feature which are set to on directly in NeoMutt.
  *
  * The output is of the form: "+enabled_feature -disabled_feature" and is
  * wrapped to SCREEN_WIDTH characters.
  */
-static void print_compile_options(void)
+static void print_compile_options(struct CompileOptions *co)
 {
   int len;
   int used = 2;
   bool tty = stdout ? isatty(fileno(stdout)) : false;
 
   printf("  ");
-  for (int i = 0; comp_opts[i].name; i++)
+  for (int i = 0; co[i].name; i++)
   {
-    len = strlen(comp_opts[i].name) + 2; /* +/- and a space */
+    len = strlen(co[i].name) + 2; /* +/- and a space */
     if ((used + len) > SCREEN_WIDTH)
     {
       used = 2;
       printf("\n  ");
     }
     used += len;
-    if (comp_opts[i].enabled)
+    if (co[i].enabled)
     {
       if (tty)
-        printf("\033[1;32m+%s\033[0m ", comp_opts[i].name);
+        printf("\033[1;32m+%s\033[0m ", co[i].name);
       else
-        printf("+%s ", comp_opts[i].name);
+        printf("+%s ", co[i].name);
     }
     else
     {
       if (tty)
-        printf("\033[1;31m-%s\033[0m ", comp_opts[i].name);
+        printf("\033[1;31m-%s\033[0m ", co[i].name);
       else
-        printf("-%s ", comp_opts[i].name);
+        printf("-%s ", co[i].name);
     }
   }
   puts("");
@@ -328,11 +341,10 @@ static void print_compile_options(void)
 
 /**
  * rstrip_in_place - Strip a trailing carriage return
- * @s:  String to be modified
+ * @param s  String to be modified
+ * @retval string The modified string
  *
  * The string has its last carriage return set to NUL.
- * Returns:
- *      The modified string
  */
 static char *rstrip_in_place(char *s)
 {
@@ -403,8 +415,11 @@ void print_version(void)
   rstrip_in_place((char *) cc_cflags);
   printf("\nCompilation CFLAGS: %s\n", (char *) cc_cflags);
 
+  puts(_("\nDefault options:"));
+  print_compile_options(comp_opts_default);
+
   puts(_("\nCompile options:"));
-  print_compile_options();
+  print_compile_options(comp_opts);
 
 #ifdef DOMAIN
   printf("DOMAIN=\"%s\"\n", DOMAIN);
@@ -441,25 +456,30 @@ void print_copyright(void)
 
 /**
  * feature_enabled - Test if a compile-time feature is enabled
- * @name:  Compile-time symbol of the feature
+ * @param name  Compile-time symbol of the feature
+ * @retval true  Feature enabled
+ * @retval false Feature not enabled, or not compiled in
  *
  * Many of the larger features of mutt can be disabled at compile time.
- * They define a symbol and use #ifdef's around their code.
+ * They define a symbol and use ifdef's around their code.
  * The symbols are mirrored in "CompileOptions comp_opts[]" in this
  * file.
  *
  * This function checks if one of these symbols is present in the code.
  *
  * These symbols are also seen in the output of "mutt -v".
- *
- * Returns:
- *      true:  Feature enabled
- *      false: Feature not enabled, or not compiled in
  */
 bool feature_enabled(const char *name)
 {
   if (!name)
     return false;
+  for (int i = 0; comp_opts_default[i].name; i++)
+  {
+    if (mutt_strcmp(name, comp_opts_default[i].name) == 0)
+    {
+      return true;
+    }
+  }
   for (int i = 0; comp_opts[i].name; i++)
   {
     if (mutt_strcmp(name, comp_opts[i].name) == 0)

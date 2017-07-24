@@ -1,4 +1,9 @@
 /**
+ * @file
+ * Encode the compilation options as a C-string
+ *
+ * @authors
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -16,18 +21,18 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define per_line 12
+#define PER_LINE 12
 
 static void txt2c(char *sym, FILE *fp)
 {
-  unsigned char buf[per_line];
+  unsigned char buf[PER_LINE];
   int i;
   int sz = 0;
 
   printf("unsigned char %s[] = {\n", sym);
   while (true)
   {
-    sz = fread(buf, sizeof(unsigned char), per_line, fp);
+    sz = fread(buf, sizeof(unsigned char), PER_LINE, fp);
     if (sz == 0)
       break;
     printf("\t");

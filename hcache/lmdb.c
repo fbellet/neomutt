@@ -1,9 +1,14 @@
 /**
+ * @file
+ * LMDB backend for the header cache
+ *
+ * @authors
  * Copyright (C) 2004 Thomas Glanzmann <sithglan@stud.uni-erlangen.de>
  * Copyright (C) 2004 Tobias Werth <sitowert@stud.uni-erlangen.de>
  * Copyright (C) 2004 Brian Fundakowski Feldman <green@FreeBSD.org>
  * Copyright (C) 2016 Pietro Cerutti <gahr@gahr.ch>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -24,30 +29,36 @@
 #include "backend.h"
 #include "lib.h"
 
-/* The maximum size of the database file (2GiB).
+/** The maximum size of the database file (2GiB).
  * The file is mmap(2)'d into memory. */
 const size_t LMDB_DB_SIZE = 2147483648;
 
-enum mdb_txn_mode
+/**
+ * enum MdbTxnMode - LMDB transaction state
+ */
+enum MdbTxnMode
 {
-  txn_uninitialized,
-  txn_read,
-  txn_write
+  TXN_UNINITIALIZED,
+  TXN_READ,
+  TXN_WRITE
 };
 
+/**
+ * struct HcacheLmdbCtx - LMDB context
+ */
 struct HcacheLmdbCtx
 {
   MDB_env *env;
   MDB_txn *txn;
   MDB_dbi db;
-  enum mdb_txn_mode txn_mode;
+  enum MdbTxnMode txn_mode;
 };
 
 static int mdb_get_r_txn(struct HcacheLmdbCtx *ctx)
 {
   int rc;
 
-  if (ctx->txn && (ctx->txn_mode == txn_read || ctx->txn_mode == txn_write))
+  if (ctx->txn && (ctx->txn_mode == TXN_READ || ctx->txn_mode == TXN_WRITE))
     return MDB_SUCCESS;
 
   if (ctx->txn)
@@ -56,7 +67,7 @@ static int mdb_get_r_txn(struct HcacheLmdbCtx *ctx)
     rc = mdb_txn_begin(ctx->env, NULL, MDB_RDONLY, &ctx->txn);
 
   if (rc == MDB_SUCCESS)
-    ctx->txn_mode = txn_read;
+    ctx->txn_mode = TXN_READ;
   else
     mutt_debug(2, "mdb_get_r_txn: %s: %s\n",
                ctx->txn ? "mdb_txn_renew" : "mdb_txn_begin", mdb_strerror(rc));
@@ -70,7 +81,7 @@ static int mdb_get_w_txn(struct HcacheLmdbCtx *ctx)
 
   if (ctx->txn)
   {
-    if (ctx->txn_mode == txn_write)
+    if (ctx->txn_mode == TXN_WRITE)
       return MDB_SUCCESS;
 
     /* Free up the memory for readonly or reset transactions */
@@ -79,7 +90,7 @@ static int mdb_get_w_txn(struct HcacheLmdbCtx *ctx)
 
   rc = mdb_txn_begin(ctx->env, NULL, 0, &ctx->txn);
   if (rc == MDB_SUCCESS)
-    ctx->txn_mode = txn_write;
+    ctx->txn_mode = TXN_WRITE;
   else
     mutt_debug(2, "mdb_get_w_txn: mdb_txn_begin: %s\n", mdb_strerror(rc));
 
@@ -126,12 +137,12 @@ static void *hcache_lmdb_open(const char *path)
   }
 
   mdb_txn_reset(ctx->txn);
-  ctx->txn_mode = txn_uninitialized;
+  ctx->txn_mode = TXN_UNINITIALIZED;
   return ctx;
 
 fail_dbi:
   mdb_txn_abort(ctx->txn);
-  ctx->txn_mode = txn_uninitialized;
+  ctx->txn_mode = TXN_UNINITIALIZED;
   ctx->txn = NULL;
 
 fail_env:
@@ -207,7 +218,7 @@ static int hcache_lmdb_store(void *vctx, const char *key, size_t keylen, void *d
   {
     mutt_debug(2, "hcahce_lmdb_store: mdb_put: %s\n", mdb_strerror(rc));
     mdb_txn_abort(ctx->txn);
-    ctx->txn_mode = txn_uninitialized;
+    ctx->txn_mode = TXN_UNINITIALIZED;
     ctx->txn = NULL;
     return rc;
   }
@@ -239,7 +250,7 @@ static int hcache_lmdb_delete(void *vctx, const char *key, size_t keylen)
     {
       mutt_debug(2, "hcache_lmdb_delete: mdb_del: %s\n", mdb_strerror(rc));
       mdb_txn_abort(ctx->txn);
-      ctx->txn_mode = txn_uninitialized;
+      ctx->txn_mode = TXN_UNINITIALIZED;
       ctx->txn = NULL;
     }
     return rc;
@@ -255,10 +266,10 @@ static void hcache_lmdb_close(void **vctx)
 
   struct HcacheLmdbCtx *ctx = *vctx;
 
-  if (ctx->txn && ctx->txn_mode == txn_write)
+  if (ctx->txn && ctx->txn_mode == TXN_WRITE)
   {
     mdb_txn_commit(ctx->txn);
-    ctx->txn_mode = txn_uninitialized;
+    ctx->txn_mode = TXN_UNINITIALIZED;
     ctx->txn = NULL;
   }
 

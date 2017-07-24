@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Shared constants/structs that are private to IMAP
+ *
+ * @authors
  * Copyright (C) 1996-1999 Brandon Long <blong@fiction.net>
  * Copyright (C) 1999-2009 Brendan Cully <brendan@kublai.com>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -17,7 +22,7 @@
  */
 
 #ifndef _MUTT_IMAP_PRIVATE_H
-#define _MUTT_IMAP_PRIVATE_H 1
+#define _MUTT_IMAP_PRIVATE_H
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -46,18 +51,12 @@ struct Progress;
 #define IMAP_LOG_PASS 5
 
 /* IMAP command responses. Used in ImapCommand.state too */
-/* <tag> OK ... */
-#define IMAP_CMD_OK       (0)
-/* <tag> BAD ... */
-#define IMAP_CMD_BAD      (-1)
-/* <tag> NO ... */
-#define IMAP_CMD_NO       (-2)
-/* * ... */
-#define IMAP_CMD_CONTINUE (1)
-/* + */
-#define IMAP_CMD_RESPOND  (2)
-/* ImapCommand.state additions */
-#define IMAP_CMD_NEW      (3)
+#define IMAP_CMD_OK       (0)  /**< <tag> OK ... */
+#define IMAP_CMD_BAD      (-1) /**< <tag> BAD ... */
+#define IMAP_CMD_NO       (-2) /**< <tag> NO ... */
+#define IMAP_CMD_CONTINUE (1)  /**< \* ... */
+#define IMAP_CMD_RESPOND  (2)  /**< \+ */
+#define IMAP_CMD_NEW      (3)  /**< ImapCommand.state additions */
 
 /* number of entries in the hash table */
 #define IMAP_CACHE_LEN 10
@@ -81,13 +80,19 @@ struct Progress;
 /* length of "DD-MMM-YYYY HH:MM:SS +ZZzz" (null-terminated) */
 #define IMAP_DATELEN 27
 
-enum
+/**
+ * enum ImapFlags - IMAP server responses
+ */
+enum ImapFlags
 {
   IMAP_FATAL = 1,
   IMAP_BYE
 };
 
-enum
+/**
+ * enum ImapState - IMAP connection state
+ */
+enum ImapState
 {
   /* States */
   IMAP_DISCONNECTED = 0,
@@ -99,31 +104,35 @@ enum
   IMAP_IDLE
 };
 
-enum
+/**
+ * enum ImapNamespace - IMAP namespace types
+ */
+enum ImapNamespace
 {
-  /* Namespace types */
   IMAP_NS_PERSONAL = 0,
   IMAP_NS_OTHER,
   IMAP_NS_SHARED
 };
 
-/* Capabilities we are interested in */
-enum
+/**
+ * enum ImapCaps - Capabilities we are interested in
+ */
+enum ImapCaps
 {
   IMAP4 = 0,
   IMAP4REV1,
   STATUS,
-  ACL,           /* RFC 2086: IMAP4 ACL extension */
-  NAMESPACE,     /* RFC 2342: IMAP4 Namespace */
-  ACRAM_MD5,     /* RFC 2195: CRAM-MD5 authentication */
-  AGSSAPI,       /* RFC 1731: GSSAPI authentication */
-  AUTH_ANON,     /* AUTH=ANONYMOUS */
-  STARTTLS,      /* RFC 2595: STARTTLS */
-  LOGINDISABLED, /*           LOGINDISABLED */
-  IDLE,          /* RFC 2177: IDLE */
-  SASL_IR,       /* SASL initial response draft */
-  ENABLE,        /* RFC 5161 */
-  X_GM_EXT1,     /* https://developers.google.com/gmail/imap/imap-extensions */
+  ACL,           /**< RFC2086: IMAP4 ACL extension */
+  NAMESPACE,     /**< RFC2342: IMAP4 Namespace */
+  ACRAM_MD5,     /**< RFC2195: CRAM-MD5 authentication */
+  AGSSAPI,       /**< RFC1731: GSSAPI authentication */
+  AUTH_ANON,     /**< AUTH=ANONYMOUS */
+  STARTTLS,      /**< RFC2595: STARTTLS */
+  LOGINDISABLED, /**<           LOGINDISABLED */
+  IDLE,          /**< RFC2177: IDLE */
+  SASL_IR,       /**< SASL initial response draft */
+  ENABLE,        /**< RFC5161 */
+  X_GM_EXT1,     /**< https://developers.google.com/gmail/imap/imap-extensions */
 
   CAPMAX
 };
@@ -132,13 +141,18 @@ enum
 #define MUTT_IMAP_CONN_NONEW    (1 << 0)
 #define MUTT_IMAP_CONN_NOSELECT (1 << 1)
 
-/* -- data structures -- */
+/**
+ * struct ImapCache - IMAP-specific message cache
+ */
 struct ImapCache
 {
   unsigned int uid;
   char *path;
 };
 
+/**
+ * struct ImapStatus - Status of an IMAP mailbox
+ */
 struct ImapStatus
 {
   char *name;
@@ -150,32 +164,43 @@ struct ImapStatus
   unsigned int unseen;
 };
 
+/**
+ * struct ImapList - Items in an IMAP browser
+ */
 struct ImapList
 {
   char *name;
-
   char delim;
-  /* if we end up storing a lot of these we could turn this into a bitfield */
   bool noselect;
   bool noinferiors;
 };
 
-/* IMAP command structure */
+/**
+ * struct ImapCommand - IMAP command structure
+ */
 struct ImapCommand
 {
   char seq[SEQLEN + 1];
   int state;
 };
 
-typedef enum {
+/**
+ * enum ImapCommandType - IMAP command type
+ */
+enum ImapCommandType
+{
   IMAP_CT_NONE = 0,
   IMAP_CT_LIST,
   IMAP_CT_STATUS
-} IMAP_COMMAND_TYPE;
+};
 
+/**
+ * struct ImapData - IMAP-specific server data
+ *
+ * This data is specific to a Connection to an IMAP server
+ */
 struct ImapData
 {
-  /* This data is specific to a Connection to an IMAP server */
   struct Connection *conn;
   bool recovering;
   unsigned char state;
@@ -191,7 +216,7 @@ struct ImapData
   char *capstr;
   unsigned char capabilities[(CAPMAX + 7) / 8];
   unsigned int seqno;
-  time_t lastread; /* last time we read a command for the server */
+  time_t lastread; /**< last time we read a command for the server */
   char *buf;
   unsigned int blen;
 
@@ -201,7 +226,7 @@ struct ImapData
 
   /* if set, the response parser will store results for complicated commands
    * here. */
-  IMAP_COMMAND_TYPE cmdtype;
+  enum ImapCommandType cmdtype;
   void *cmddata;
 
   /* command queue */
@@ -220,14 +245,14 @@ struct ImapData
   char *mailbox;
   unsigned short check_status;
   unsigned char reopen;
-  unsigned int newMailCount; /* Set when EXISTS notifies of new mail */
+  unsigned int new_mail_count; /**< Set when EXISTS notifies of new mail */
   struct ImapCache cache[IMAP_CACHE_LEN];
   struct Hash *uid_hash;
   unsigned int uid_validity;
   unsigned int uidnext;
-  struct Header **msn_index;   /* look up headers by (MSN-1) */
-  unsigned int msn_index_size; /* allocation size */
-  unsigned int max_msn;        /* the largest MSN fetched so far */
+  struct Header **msn_index;   /**< look up headers by (MSN-1) */
+  unsigned int msn_index_size; /**< allocation size */
+  unsigned int max_msn;        /**< the largest MSN fetched so far */
   struct BodyCache *bcache;
 
   /* all folder flags - system flags AND keywords */

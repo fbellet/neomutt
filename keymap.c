@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Manage keymappings
+ *
+ * @authors
  * Copyright (C) 1996-2000,2002,2010-2011 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -159,8 +164,10 @@ static int parse_fkey(char *s)
     return n;
 }
 
-/*
- * This function parses the string <NNN> and uses the octal value as the key
+/**
+ * parse_keycode - Parse a numeric keycode
+ *
+ * This function parses the string `<NNN>` and uses the octal value as the key
  * to bind.
  */
 static int parse_keycode(const char *s)
@@ -229,8 +236,11 @@ static int parsekeys(const char *str, keycode_t *d, int max)
   return (max - len);
 }
 
-/* insert a key sequence into the specified map.  the map is sorted by ASCII
- * value (lowest to highest)
+/**
+ * km_bind_err - Set up a key binding
+ *
+ * Insert a key sequence into the specified map.
+ * The map is sorted by ASCII value (lowest to highest)
  */
 int km_bind_err(char *s, int menu, int op, char *macro, char *descr, struct Buffer *err)
 {
@@ -267,13 +277,19 @@ int km_bind_err(char *s, int menu, int op, char *macro, char *descr, struct Buff
           if (err)
           {
             /* err was passed, put the string there */
-            snprintf(err->data, err->dsize, _("Binding '%s' will alias '%s'  Before, try: 'bind %s %s noop'  https://neomutt.org/guide/configuration.html#bind-warnings"),
-                     old_binding, new_binding, mutt_getnamebyvalue(menu, Menus), new_binding);
+            snprintf(
+                err->data, err->dsize,
+                _("Binding '%s' will alias '%s'  Before, try: 'bind %s %s "
+                  "noop'  "
+                  "https://neomutt.org/guide/configuration.html#bind-warnings"),
+                old_binding, new_binding, mutt_getnamebyvalue(menu, Menus), new_binding);
           }
           else
           {
             mutt_error(
-                _("Binding '%s' will alias '%s'  Before, try: 'bind %s %s noop'  https://neomutt.org/guide/configuration.html#bind-warnings"),
+                _("Binding '%s' will alias '%s'  Before, try: 'bind %s %s "
+                  "noop'  "
+                  "https://neomutt.org/guide/configuration.html#bind-warnings"),
                 old_binding, new_binding, mutt_getnamebyvalue(menu, Menus), new_binding);
           }
           retval = -2;
@@ -330,6 +346,7 @@ static int km_bindkey_err(char *s, int menu, int op, struct Buffer *err)
 {
   return km_bind_err(s, menu, op, NULL, NULL, err);
 }
+
 static int km_bindkey(char *s, int menu, int op)
 {
   return km_bindkey_err(s, menu, op, NULL);
@@ -358,9 +375,12 @@ static char *get_func(const struct Binding *bindings, int op)
   return NULL;
 }
 
-/* Parses s for <function> syntax and adds the whole sequence to
- * either the macro or unget buffer.  This function is invoked by the next
- * two defines below.
+/**
+ * generic_tokenize_push_string - Parse and queue a 'push' command
+ *
+ * Parses s for `<function>` syntax and adds the whole sequence to either the
+ * macro or unget buffer.  This function is invoked by the next two defines
+ * below.
  */
 static void generic_tokenize_push_string(char *s, void (*generic_push)(int, int))
 {
@@ -449,11 +469,12 @@ static int retry_generic(int menu, keycode_t *keys, int keyslen, int lastkey)
   return OP_NULL;
 }
 
-/* return values:
- *      >0              function to execute
- *      OP_NULL         no function bound to key sequence
- *      -1              error occurred while reading input
- *      -2              a timeout or sigwinch occurred
+/**
+ * km_dokey - Determine what a keypress should do
+ * @retval >0       Function to execute
+ * @retval #OP_NULL No function bound to key sequence
+ * @retval -1       Error occurred while reading input
+ * @retval -2       A timeout or sigwinch occurred
  */
 int km_dokey(int menu)
 {
@@ -660,6 +681,10 @@ struct Keymap *km_find_func(int menu, int func)
 }
 
 #ifdef NCURSES_VERSION
+
+/**
+ * struct Extkey - Map key names from NeoMutt's style to Curses style
+ */
 struct Extkey
 {
   const char *name;
@@ -702,7 +727,11 @@ static const struct Extkey ExtKeys[] = {
   { 0, 0 },
 };
 
-/* Look up Mutt's name for a key and find the ncurses extended name for it */
+/**
+ * find_ext_name - Find the curses name for a key
+ *
+ * Look up Mutt's name for a key and find the ncurses extended name for it
+ */
 static const char *find_ext_name(const char *key)
 {
   for (int j = 0; ExtKeys[j].name; ++j)
@@ -714,12 +743,15 @@ static const char *find_ext_name(const char *key)
 }
 #endif /* NCURSES_VERSION */
 
-/* Determine the keycodes for ncurses extended keys and fill in the KeyNames array.
+/**
+ * init_extended_keys - Initialise map of ncurses extended keys
  *
- * This function must be called *after* initscr(), or tigetstr() returns -1.  This
- * creates a bit of a chicken-and-egg problem because km_init() is called prior to
- * start_curses().  This means that the default keybindings can't include any of the
- * extended keys because they won't be defined until later.
+ * Determine the keycodes for ncurses extended keys and fill in the KeyNames array.
+ *
+ * This function must be called *after* initscr(), or tigetstr() returns -1.
+ * This creates a bit of a chicken-and-egg problem because km_init() is called
+ * prior to start_curses().  This means that the default keybindings can't
+ * include any of the extended keys because they won't be defined until later.
  */
 void init_extended_keys(void)
 {
@@ -791,7 +823,7 @@ void km_init(void)
   km_bindkey("<home>", MENU_EDITOR, OP_EDITOR_BOL);
   km_bindkey("<end>", MENU_EDITOR, OP_EDITOR_EOL);
   km_bindkey("<backspace>", MENU_EDITOR, OP_EDITOR_BACKSPACE);
-  km_bindkey("<delete>", MENU_EDITOR, OP_EDITOR_BACKSPACE);
+  km_bindkey("<delete>", MENU_EDITOR, OP_EDITOR_DELETE_CHAR);
   km_bindkey("\177", MENU_EDITOR, OP_EDITOR_BACKSPACE);
 
   /* generic menu keymap */
@@ -939,7 +971,11 @@ int mutt_parse_push(struct Buffer *buf, struct Buffer *s, unsigned long data,
   return r;
 }
 
-/* expects to see: <menu-string>,<menu-string>,... <key-string> */
+/**
+ * parse_keymap - Parse a user-config key binding
+ *
+ * Expects to see: <menu-string>,<menu-string>,... <key-string>
+ */
 char *parse_keymap(int *menu, struct Buffer *s, int maxmenus, int *nummenus, struct Buffer *err)
 {
   struct Buffer buf;
@@ -1053,7 +1089,11 @@ const struct Binding *km_get_table(int menu)
   return NULL;
 }
 
-/* bind menu-name '<key_sequence>' function-name */
+/**
+ * mutt_parse_bind - Parse a 'bind' command
+ *
+ * bind menu-name `<key_sequence>` function-name
+ */
 int mutt_parse_bind(struct Buffer *buf, struct Buffer *s, unsigned long data,
                     struct Buffer *err)
 {
@@ -1106,7 +1146,11 @@ int mutt_parse_bind(struct Buffer *buf, struct Buffer *s, unsigned long data,
   return r;
 }
 
-/* macro <menu> <key> <macro> <description> */
+/**
+ * mutt_parse_macro - Parse a 'macro' command
+ *
+ * macro `<menu>` `<key>` `<macro>` `<description>`
+ */
 int mutt_parse_macro(struct Buffer *buf, struct Buffer *s, unsigned long data,
                      struct Buffer *err)
 {
@@ -1156,7 +1200,9 @@ int mutt_parse_macro(struct Buffer *buf, struct Buffer *s, unsigned long data,
   return r;
 }
 
-/* exec function-name */
+/**
+ * mutt_parse_exec - exec function-name
+ */
 int mutt_parse_exec(struct Buffer *buf, struct Buffer *s, unsigned long data,
                     struct Buffer *err)
 {
@@ -1198,9 +1244,10 @@ int mutt_parse_exec(struct Buffer *buf, struct Buffer *s, unsigned long data,
   return 0;
 }
 
-/*
- * prompts the user to enter a keystroke, and displays the octal value back
- * to the user.
+/**
+ * mutt_what_key - Ask the user to press a key
+ *
+ * Displays the octal value back to the user.
  */
 void mutt_what_key(void)
 {

@@ -1,4 +1,7 @@
 /**
+ * @file
+ * Calculate the SHA1 checksum of a buffer
+ *
  * SHA-1 in C
  *
  * By Steve Reid <steve@edmweb.com>, with small changes to make it
@@ -6,10 +9,13 @@
  */
 
 #ifndef _MUTT_SHA1_H
-#define _MUTT_SHA1_H 1
+#define _MUTT_SHA1_H
 
 #include <stdint.h>
 
+/**
+ * struct Sha1Ctx - Cursor for the SHA1 hashing
+ */
 struct Sha1Ctx
 {
   uint32_t state[5];
@@ -21,11 +27,6 @@ void sha1_transform(uint32_t state[5], const unsigned char buffer[64]);
 void sha1_init(struct Sha1Ctx *context);
 void sha1_update(struct Sha1Ctx *context, const unsigned char *data, uint32_t len);
 void sha1_final(unsigned char digest[20], struct Sha1Ctx *context);
-
-#define SHA1_Transform sha1_transform
-#define SHA1_Init sha1_init
-#define SHA1_Update sha1_update
-#define SHA1_Final sha1_final
 
 #define SHA_DIGEST_LENGTH 20
 

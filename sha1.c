@@ -1,4 +1,7 @@
 /**
+ * @file
+ * Calculate the SHA1 checksum of a buffer
+ *
  * SHA-1 in C
  *
  * By Steve Reid <steve@edmweb.com>, with small changes to make it
@@ -14,8 +17,6 @@
  * A million repetitions of "a"
  * 34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  */
-
-#define SHA1HANDSOFF
 
 #include "config.h"
 #include <string.h>
@@ -55,7 +56,11 @@
   w = rol(w, 30);
 
 
-/* Hash a single 512-bit block. This is the core of the algorithm. */
+/**
+ * sha1_transform - Hash a single 512-bit block
+ *
+ * This is the core of the algorithm.
+ */
 void sha1_transform(uint32_t state[5], const unsigned char buffer[64])
 {
   uint32_t a, b, c, d, e;
@@ -63,17 +68,8 @@ void sha1_transform(uint32_t state[5], const unsigned char buffer[64])
     unsigned char c[64];
     uint32_t l[16];
   } CHAR64LONG16;
-#ifdef SHA1HANDSOFF
   CHAR64LONG16 block[1]; /* use array to appear as a pointer */
   memcpy(block, buffer, 64);
-#else
-  /* The following had better never be used because it causes the
-     * pointer-to-const buffer to be cast into a pointer to non-const.
-     * And the result is written through.  I threw a "const" in, hoping
-     * this will cause a diagnostic.
-     */
-  CHAR64LONG16 *block = (const CHAR64LONG16 *) buffer;
-#endif
   /* Copy context->state[] to working vars */
   a = state[0];
   b = state[1];
@@ -169,13 +165,13 @@ void sha1_transform(uint32_t state[5], const unsigned char buffer[64])
   state[4] += e;
   /* Wipe variables */
   a = b = c = d = e = 0;
-#ifdef SHA1HANDSOFF
   memset(block, '\0', sizeof(block));
-#endif
 }
 
 
-/* sha1_init - Initialize new context */
+/**
+ * sha1_init - Initialize new context
+ */
 void sha1_init(struct Sha1Ctx *context)
 {
   /* SHA1 initialization constants */
@@ -188,7 +184,9 @@ void sha1_init(struct Sha1Ctx *context)
 }
 
 
-/* Run your data through this. */
+/**
+ * sha1_update - Run your data through this
+ */
 void sha1_update(struct Sha1Ctx *context, const unsigned char *data, uint32_t len)
 {
   uint32_t i;
@@ -215,7 +213,9 @@ void sha1_update(struct Sha1Ctx *context, const unsigned char *data, uint32_t le
 }
 
 
-/* Add padding and return the message digest. */
+/**
+ * sha1_final - Add padding and return the message digest
+ */
 void sha1_final(unsigned char digest[20], struct Sha1Ctx *context)
 {
   unsigned i;

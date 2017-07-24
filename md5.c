@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Calculate the MD5 checksum of a buffer
+ *
+ * @authors
  * Copyright (C) 1995,1996,1997,1999,2000,2001,2005,2006,2008 Free Software Foundation, Inc.
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -15,7 +20,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * md5.c - Functions to compute MD5 message digest of files or memory blocks
- * according to the definition of MD5 in RFC 1321 from April 1992.
+ * according to the definition of MD5 in RFC1321 from April 1992.
  *
  * NOTE: The canonical source of this file is maintained with the GNU C
  * Library.  Bugs can be reported to bug-glibc@prep.ai.mit.edu.
@@ -24,8 +29,8 @@
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.  */
 
 #include "config.h"
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <string.h>
 #include "md5.h"
 
@@ -39,11 +44,14 @@
 #define BLOCKSIZE 4096
 
 /* This array contains the bytes used to pad the buffer to the next
-   64-byte boundary.  (RFC 1321, 3.1: Step 1)  */
+   64-byte boundary.  (RFC1321, 3.1: Step 1)  */
 static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
 
-/* Initialize structure containing state of computation.
-   (RFC 1321, 3.3: Step 3)  */
+/**
+ * md5_init_ctx - Initialise the MD5 computation
+ *
+ * (RFC1321, 3.3: Step 3)
+ */
 void md5_init_ctx(struct Md5Ctx *ctx)
 {
   ctx->A = 0x67452301;
@@ -55,16 +63,24 @@ void md5_init_ctx(struct Md5Ctx *ctx)
   ctx->buflen = 0;
 }
 
-/* Copy the 4 byte value from v into the memory location pointed to by *cp,
-   If your architecture allows unaligned access this is equivalent to
-   * (md5_uint32 *) cp = v  */
+/**
+ * set_uint32 - Write a 32 bit number
+ *
+ * Copy the 4 byte value from v into the memory location pointed to by *cp, If
+ * your architecture allows unaligned access this is equivalent to
+ * `*(md5_uint32*) cp = v`
+ */
 static inline void set_uint32(char *cp, md5_uint32 v)
 {
   memcpy(cp, &v, sizeof(v));
 }
 
-/* Put result from CTX in first 16 bytes following RESBUF.  The result
-   must be in little endian byte order.  */
+/**
+ * md5_read_ctx - Read from the context into a buffer
+ *
+ * Put result from CTX in first 16 bytes following RESBUF.
+ * The result must be in little endian byte order.
+ */
 void *md5_read_ctx(const struct Md5Ctx *ctx, void *resbuf)
 {
   char *r = resbuf;
@@ -76,8 +92,12 @@ void *md5_read_ctx(const struct Md5Ctx *ctx, void *resbuf)
   return resbuf;
 }
 
-/* Process the remaining bytes in the internal buffer and the usual
-   prolog according to the standard and write the result to RESBUF.  */
+/**
+ * md5_finish_ctx - Process the remaining bytes in the buffer
+ *
+ * Process the remaining bytes in the internal buffer and the usual prologue
+ * according to the standard and write the result to RESBUF.
+ */
 void *md5_finish_ctx(struct Md5Ctx *ctx, void *resbuf)
 {
   /* Take yet unprocessed bytes into account.  */
@@ -101,9 +121,12 @@ void *md5_finish_ctx(struct Md5Ctx *ctx, void *resbuf)
   return md5_read_ctx(ctx, resbuf);
 }
 
-/* Compute MD5 message digest for bytes read from STREAM.  The
-   resulting message digest number will be written into the 16 bytes
-   beginning at RESBLOCK.  */
+/**
+ * md5_stream - Compute MD5 message digest for bytes read from a file
+ *
+ * The resulting message digest number will be written into the 16 bytes
+ * beginning at RESBLOCK.
+ */
 int md5_stream(FILE *stream, void *resblock)
 {
   struct Md5Ctx ctx;
@@ -164,10 +187,13 @@ process_partial_block:
   return 0;
 }
 
-/* Compute MD5 message digest for LEN bytes beginning at Buffer.  The
-   result is always in little endian byte order, so that a byte-wise
-   output yields to the wanted ASCII representation of the message
-   digest.  */
+/**
+ * md5_buffer - Calculate the MD5 hash of a buffer
+ *
+ * Compute MD5 message digest for LEN bytes beginning at Buffer.  The result is
+ * always in little endian byte order, so that a byte-wise output yields to the
+ * wanted ASCII representation of the message digest.
+ */
 void *md5_buffer(const char *buffer, size_t len, void *resblock)
 {
   struct Md5Ctx ctx;
@@ -249,7 +275,7 @@ void md5_process_bytes(const void *buffer, size_t len, struct Md5Ctx *ctx)
 
 
 /* These are the four functions used in the four steps of the MD5 algorithm
-   and defined in the RFC 1321.  The first function is a little bit optimized
+   and defined in the RFC1321.  The first function is a little bit optimized
    (as found in Colin Plumbs public domain implementation).  */
 /* #define FF(b, c, d) ((b & c) | (~b & d)) */
 #define FF(b, c, d) (d ^ (b & (c ^ d)))
@@ -257,8 +283,12 @@ void md5_process_bytes(const void *buffer, size_t len, struct Md5Ctx *ctx)
 #define FH(b, c, d) (b ^ c ^ d)
 #define FI(b, c, d) (c ^ (b | ~d))
 
-/* Process LEN bytes of Buffer, accumulating context into CTX.
-   It is assumed that LEN % 64 == 0.  */
+/**
+ * md5_process_block - Process a block with MD5
+ *
+ * Process LEN bytes of Buffer, accumulating context into CTX.
+ * It is assumed that LEN % 64 == 0.
+ */
 void md5_process_block(const void *buffer, size_t len, struct Md5Ctx *ctx)
 {
   md5_uint32 correct_words[16];
@@ -270,7 +300,7 @@ void md5_process_block(const void *buffer, size_t len, struct Md5Ctx *ctx)
   md5_uint32 C = ctx->C;
   md5_uint32 D = ctx->D;
 
-  /* First increment the byte count.  RFC 1321 specifies the possible length of
+  /* First increment the byte count.  RFC1321 specifies the possible length of
    * the file up to 2^64 bits.  Here we only compute the number of bytes.  Do a
    * double word increment.  */
   ctx->total[0] += len;
@@ -307,7 +337,7 @@ void md5_process_block(const void *buffer, size_t len, struct Md5Ctx *ctx)
 #define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
 
     /* Before we start, one word to the strange constants.
-     * They are defined in RFC 1321 as
+     * They are defined in RFC1321 as
      * T[i] = (int) (4294967296.0 * fabs (sin (i))), i=1..64
      * Here is an equivalent invocation using Perl:
      * perl -e 'foreach(1..64){printf "0x%08x\n", int (4294967296 * abs (sin $_))}'

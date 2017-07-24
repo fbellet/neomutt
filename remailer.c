@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Support of Mixmaster anonymous remailer
+ *
+ * @authors
  * Copyright (C) 1999-2001 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -45,9 +50,13 @@
 #include "protos.h"
 #include "rfc822.h"
 
+/**
+ * struct Coord - Screen coordindates
+ */
 struct Coord
 {
-  short r, c;
+  short r; /**< row */
+  short c; /**< column */
 };
 
 static int mix_get_caps(const char *capstr)
@@ -116,7 +125,9 @@ static void mix_free_remailer(struct Remailer **r)
   FREE(r);
 }
 
-/* parse the type2.list as given by mixmaster -T */
+/**
+ * mix_type2_list - parse the type2.list as given by mixmaster -T
+ */
 static struct Remailer **mix_type2_list(size_t *l)
 {
   FILE *fp = NULL;
@@ -339,19 +350,18 @@ static const char *mix_format_caps(struct Remailer *r)
   return capbuff;
 }
 
-/*
- * Format an entry for the remailer menu.
+/**
+ * mix_entry_fmt - Format an entry for the remailer menu
  *
- * %n   number
- * %c   capabilities
- * %s   short name
- * %a   address
- *
+ * * %n number
+ * * %c capabilities
+ * * %s short name
+ * * %a address
  */
 static const char *mix_entry_fmt(char *dest, size_t destlen, size_t col, int cols,
                                  char op, const char *src, const char *prefix,
                                  const char *ifstring, const char *elsestring,
-                                 unsigned long data, format_flag flags)
+                                 unsigned long data, enum FormatFlag flags)
 {
   char fmt[16];
   struct Remailer *remailer = (struct Remailer *) data;
@@ -397,9 +407,9 @@ static const char *mix_entry_fmt(char *dest, size_t destlen, size_t col, int col
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, mutt_attach_fmt, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, ifstring, mutt_attach_fmt, data, 0);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, mutt_attach_fmt, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, elsestring, mutt_attach_fmt, data, 0);
   return src;
 }
 
@@ -407,7 +417,7 @@ static const char *mix_entry_fmt(char *dest, size_t destlen, size_t col, int col
 static void mix_entry(char *b, size_t blen, struct Menu *menu, int num)
 {
   struct Remailer **type2_list = (struct Remailer **) menu->data;
-  mutt_FormatString(b, blen, 0, MuttIndexWindow->cols, NONULL(MixEntryFormat), mix_entry_fmt,
+  mutt_expando_format(b, blen, 0, MuttIndexWindow->cols, NONULL(MixEntryFormat), mix_entry_fmt,
                     (unsigned long) type2_list[num], MUTT_FORMAT_ARROWCURSOR);
 }
 
@@ -656,7 +666,9 @@ void mix_make_chain(struct List **chainp)
   FREE(&chain);
 }
 
-/* some safety checks before piping the message to mixmaster */
+/**
+ * mix_check_message - Safety-check the message before passing it to mixmaster
+ */
 int mix_check_message(struct Header *msg)
 {
   const char *fqdn = NULL;

@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Address book handling aliases
+ *
+ * @authors
  * Copyright (C) 1996-2000,2007 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -46,7 +51,7 @@ static const struct Mapping AliasHelp[] = {
 static const char *alias_format_str(char *dest, size_t destlen, size_t col, int cols,
                                     char op, const char *src, const char *fmt,
                                     const char *ifstring, const char *elsestring,
-                                    unsigned long data, format_flag flags)
+                                    unsigned long data, enum FormatFlag flags)
 {
   char tmp[SHORT_STRING], adr[SHORT_STRING];
   struct Alias *alias = (struct Alias *) data;
@@ -81,7 +86,7 @@ static const char *alias_format_str(char *dest, size_t destlen, size_t col, int 
 
 static void alias_entry(char *s, size_t slen, struct Menu *m, int num)
 {
-  mutt_FormatString(s, slen, 0, MuttIndexWindow->cols, NONULL(AliasFmt), alias_format_str,
+  mutt_expando_format(s, slen, 0, MuttIndexWindow->cols, NONULL(AliasFmt), alias_format_str,
                     (unsigned long) ((struct Alias **) m->data)[num],
                     MUTT_FORMAT_ARROWCURSOR);
 }

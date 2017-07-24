@@ -1,8 +1,13 @@
 /**
+ * @file
+ * String processing routines to generate the mail index
+ *
+ * @authors
  * Copyright (C) 1996-2000,2002,2007 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2016 Richard Russon <rich@flatcap.org>
  * Copyright (C) 2016 Ian Zimmerman <itz@primate.net>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -49,9 +54,11 @@
 #include "mutt_notmuch.h"
 #endif
 
-enum
+/**
+ * enum FlagChars - Index into the FlagChars variable ($flag_chars)
+ */
+enum FlagChars
 {
-  /* Indexing into the Flagchars variable ($flag_chars) */
   FlagCharTagged,
   FlagCharImportant,
   FlagCharDeleted,
@@ -80,9 +87,17 @@ bool mutt_is_subscribed_list(struct Address *addr)
   return false;
 }
 
-/* Search for a mailing list in the list of addresses pointed to by adr.
- * If one is found, print pfx and the name of the list into buf, then
- * return 1.  Otherwise, simply return 0.
+/**
+ * check_for_mailing_list - Search list of addresses for a mailing list
+ * @param adr     List of addreses to search
+ * @param pfx     Prefix string
+ * @param buf     Buffer to store results
+ * @param buflen  Buffer length
+ * @retval 1 Mailing list found
+ * @retval 0 No list found
+ *
+ * Search for a mailing list in the list of addresses pointed to by adr.
+ * If one is found, print pfx and the name of the list into buf.
  */
 static bool check_for_mailing_list(struct Address *adr, const char *pfx, char *buf, int buflen)
 {
@@ -98,7 +113,9 @@ static bool check_for_mailing_list(struct Address *adr, const char *pfx, char *b
   return false;
 }
 
-/* Search for a mailing list in the list of addresses pointed to by adr.
+/**
+ * check_for_mailing_list_addr - Check an address list for a mailing list
+ *
  * If one is found, print the address of the list into buf, then return 1.
  * Otherwise, simply return 0.
  */
@@ -131,11 +148,16 @@ static bool first_mailing_list(char *buf, size_t buflen, struct Address *a)
 }
 
 /**
- * Takes the color to embed, the buffer to manipulate and the buffer length as
- * arguments.
- * Returns the number of chars written.
+ * add_index_color - Insert a color marker into a string
+ * @param buf    Buffer to store marker
+ * @param buflen Buffer length
+ * @param flags  Flags, e.g. MUTT_FORMAT_INDEX
+ * @param color  Color, e.g. MT_COLOR_MESSAGE
+ * @retval n Number of characters written
+ *
+ * The colors are stored as "magic" strings embedded in the text.
  */
-static size_t add_index_color(char *buf, size_t buflen, format_flag flags, char color)
+static size_t add_index_color(char *buf, size_t buflen, enum FormatFlag flags, char color)
 {
   int len;
 
@@ -164,6 +186,9 @@ static size_t add_index_color(char *buf, size_t buflen, format_flag flags, char 
   return 2;
 }
 
+/**
+ * enum FieldType - Header types
+ */
 enum FieldType
 {
   DISP_TO,
@@ -175,9 +200,9 @@ enum FieldType
 
 /**
  * get_nth_wchar - Extract one char from a multi-byte table
- * @table:  Multi-byte table
- * @index:  Select this character
- * @return: String pointer to the character
+ * @param table  Multi-byte table
+ * @param index  Select this character
+ * @retval ptr String pointer to the character
  *
  * Extract one multi-byte character from a string table.
  * If the index is invalid, then a space character will be returned.
@@ -196,8 +221,8 @@ static char *get_nth_wchar(struct MbCharTable *table, int index)
 
 /**
  * make_from_prefix - Create a prefix for an author field
- * @disp:   Type of field
- * @return: Prefix string (do not free it)
+ * @param disp   Type of field
+ * @retval string Prefix string (do not free it)
  *
  * If $from_chars is set, pick an appropriate character from it.
  * If not, use the default prefix: "To", "Cc", etc
@@ -223,10 +248,10 @@ static const char *make_from_prefix(enum FieldType disp)
 
 /**
  * make_from - Generate a From: field (with optional prefix)
- * @env:      Envelope of the email
- * @buf:      Buffer to store the result
- * @len:      Size of the buffer
- * @do_lists: Should we check for mailing lists?
+ * @param env      Envelope of the email
+ * @param buf      Buffer to store the result
+ * @param len      Size of the buffer
+ * @param do_lists Should we check for mailing lists?
  *
  * Generate the %F or %L field in $index_format.
  * This is the author, or recipient of the email.
@@ -315,13 +340,14 @@ static bool user_in_addr(struct Address *a)
   return false;
 }
 
-/* Return values:
- * 0: user is not in list
- * 1: user is unique recipient
- * 2: user is in the TO list
- * 3: user is in the CC list
- * 4: user is originator
- * 5: sent to a subscribed mailinglist
+/**
+ * user_is_recipient - Is the user a recipient of the message
+ * @retval 0 User is not in list
+ * @retval 1 User is unique recipient
+ * @retval 2 User is in the TO list
+ * @retval 3 User is in the CC list
+ * @retval 4 User is originator
+ * @retval 5 Sent to a subscribed mailinglist
  */
 static int user_is_recipient(struct Header *h)
 {
@@ -358,10 +384,11 @@ static int user_is_recipient(struct Header *h)
 
 /**
  * get_initials - Turn a name into initials
- * @name:   String to be converted
- * @buf:    Buffer for the result
- * @buflen: Size of the buffer
- * @return: 1 on Success, 0 on Failure
+ * @param name   String to be converted
+ * @param buf    Buffer for the result
+ * @param buflen Size of the buffer
+ * @retval 1 on Success
+ * @retval 0 on Failure
  *
  * Take a name, e.g. "John F. Kennedy" and reduce it to initials "JFK".
  * The function saves the first character from each word.  Words are delimited
@@ -429,52 +456,57 @@ static char *apply_subject_mods(struct Envelope *env)
 }
 
 
-/* %a = address of author
- * %A = reply-to address (if present; otherwise: address of author
- * %b = filename of the originating folder
- * %B = the list to which the letter was sent, or else the folder name (%b).
- * %c = size of message in bytes
- * %C = current message number
- * %d = date and time of message using $date_format and sender's timezone
- * %D = date and time of message using $date_format and local timezone
- * %e = current message number in thread
- * %E = number of messages in current thread
- * %f = entire from line
- * %F = like %n, unless from self
- * %g = message labels (e.g. notmuch tags)
- * %i = message-id
- * %I = initials of author
- * %K = the list to which the letter was sent (if any; otherwise: empty)
- * %l = number of lines in the message
- * %L = like %F, except `lists' are displayed first
- * %m = number of messages in the mailbox
- * %n = name of author
- * %N = score
- * %O = like %L, except using address instead of name
- * %P = progress indicator for builtin pager
- * %q = newsgroup name (if compiled with NNTP support)
- * %r = comma separated list of To: recipients
- * %R = comma separated list of Cc: recipients
- * %s = subject
- * %S = short message status (e.g., N/O/D/!/r/-)
- * %t = `to:' field (recipients)
- * %T = $to_chars
- * %u = user (login) name of author
- * %v = first name of author, unless from self
- * %W = where user is (organization)
- * %x = `x-comment-to:' field (if present and compiled with NNTP support)
- * %X = number of MIME attachments
- * %y = `x-label:' field (if present)
- * %Y = `x-label:' field (if present, tree unfolded, and != parent's x-label)
- * %zs = message status flags
- * %zc = message crypto flags
- * %zt = message tag flags
- * %Z = combined message flags
+/**
+ * hdr_format_str - Format a string, like printf()
+ *
+ * | Expando | Description
+ * |:--------|:-----------------------------------------------------------------
+ * | \%a     | address of author
+ * | \%A     | reply-to address (if present; otherwise: address of author
+ * | \%b     | filename of the originating folder
+ * | \%B     | the list to which the letter was sent, or else the folder name (%b).
+ * | \%c     | size of message in bytes
+ * | \%C     | current message number
+ * | \%d     | date and time of message using $date_format and sender's timezone
+ * | \%D     | date and time of message using $date_format and local timezone
+ * | \%e     | current message number in thread
+ * | \%E     | number of messages in current thread
+ * | \%f     | entire from line
+ * | \%F     | like %n, unless from self
+ * | \%g     | message labels (e.g. notmuch tags)
+ * | \%i     | message-id
+ * | \%I     | initials of author
+ * | \%K     | the list to which the letter was sent (if any; otherwise: empty)
+ * | \%l     | number of lines in the message
+ * | \%L     | like %F, except `lists' are displayed first
+ * | \%m     | number of messages in the mailbox
+ * | \%n     | name of author
+ * | \%N     | score
+ * | \%O     | like %L, except using address instead of name
+ * | \%P     | progress indicator for builtin pager
+ * | \%q     | newsgroup name (if compiled with NNTP support)
+ * | \%r     | comma separated list of To: recipients
+ * | \%R     | comma separated list of Cc: recipients
+ * | \%s     | subject
+ * | \%S     | short message status (e.g., N/O/D/!/r/-)
+ * | \%t     | `to:' field (recipients)
+ * | \%T     | $to_chars
+ * | \%u     | user (login) name of author
+ * | \%v     | first name of author, unless from self
+ * | \%W     | where user is (organization)
+ * | \%x     | `x-comment-to:' field (if present and compiled with NNTP support)
+ * | \%X     | number of MIME attachments
+ * | \%y     | `x-label:' field (if present)
+ * | \%Y     | `x-label:' field (if present, tree unfolded, and != parent's x-label)
+ * | \%zs    | message status flags
+ * | \%zc    | message crypto flags
+ * | \%zt    | message tag flags
+ * | \%Z     | combined message flags
  */
 static const char *hdr_format_str(char *dest, size_t destlen, size_t col, int cols,
                                   char op, const char *src, const char *prefix,
                                   const char *ifstring, const char *elsestring,
-                                  unsigned long data, format_flag flags)
+                                  unsigned long data, enum FormatFlag flags)
 {
   struct HdrFormatInfo *hfi = (struct HdrFormatInfo *) data;
   struct Header *hdr = NULL, *htmp = NULL;
@@ -1307,10 +1339,10 @@ static const char *hdr_format_str(char *dest, size_t destlen, size_t col, int co
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, hdr_format_str,
+    mutt_expando_format(dest, destlen, col, cols, ifstring, hdr_format_str,
                       (unsigned long) hfi, flags);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, hdr_format_str,
+    mutt_expando_format(dest, destlen, col, cols, elsestring, hdr_format_str,
                       (unsigned long) hfi, flags);
 
   return src;
@@ -1319,7 +1351,7 @@ static const char *hdr_format_str(char *dest, size_t destlen, size_t col, int co
 }
 
 void _mutt_make_string(char *dest, size_t destlen, const char *s,
-                       struct Context *ctx, struct Header *hdr, format_flag flags)
+                       struct Context *ctx, struct Header *hdr, enum FormatFlag flags)
 {
   struct HdrFormatInfo hfi;
 
@@ -1327,12 +1359,12 @@ void _mutt_make_string(char *dest, size_t destlen, const char *s,
   hfi.ctx = ctx;
   hfi.pager_progress = 0;
 
-  mutt_FormatString(dest, destlen, 0, MuttIndexWindow->cols, s, hdr_format_str,
+  mutt_expando_format(dest, destlen, 0, MuttIndexWindow->cols, s, hdr_format_str,
                     (unsigned long) &hfi, flags);
 }
 
 void mutt_make_string_info(char *dst, size_t dstlen, int cols, const char *s,
-                           struct HdrFormatInfo *hfi, format_flag flags)
+                           struct HdrFormatInfo *hfi, enum FormatFlag flags)
 {
-  mutt_FormatString(dst, dstlen, 0, cols, s, hdr_format_str, (unsigned long) hfi, flags);
+  mutt_expando_format(dst, dstlen, 0, cols, s, hdr_format_str, (unsigned long) hfi, flags);
 }

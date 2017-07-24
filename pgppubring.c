@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Standalone tool to dump the contents of a PGP key ring
+ *
+ * @authors
  * Copyright (C) 1997-2003 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -27,7 +32,6 @@
  *
  * You can actually use this to put together some fairly general
  * PGP key management applications.
- *
  */
 
 #include "config.h"
@@ -191,7 +195,9 @@ static bool pgpring_string_matches_hint(const char *s, const char *hints[], int 
   return false;
 }
 
-/* The actual key ring parser */
+/**
+ * pgp_make_pgp2_fingerprint - The actual key ring parser
+ */
 static void pgp_make_pgp2_fingerprint(unsigned char *buff, unsigned char *digest)
 {
   struct Md5Ctx ctx;
@@ -310,7 +316,7 @@ static void pgp_make_pgp3_fingerprint(unsigned char *buff, size_t l, unsigned ch
   unsigned char dummy;
   struct Sha1Ctx context;
 
-  SHA1_Init(&context);
+  sha1_init(&context);
 
   dummy = buff[0] & 0x3f;
 
@@ -318,13 +324,13 @@ static void pgp_make_pgp3_fingerprint(unsigned char *buff, size_t l, unsigned ch
     dummy = PT_PUBKEY;
 
   dummy = (dummy << 2) | 0x81;
-  SHA1_Update(&context, &dummy, 1);
+  sha1_update(&context, &dummy, 1);
   dummy = ((l - 1) >> 8) & 0xff;
-  SHA1_Update(&context, &dummy, 1);
+  sha1_update(&context, &dummy, 1);
   dummy = (l - 1) & 0xff;
-  SHA1_Update(&context, &dummy, 1);
-  SHA1_Update(&context, buff + 1, l - 1);
-  SHA1_Final(digest, &context);
+  sha1_update(&context, &dummy, 1);
+  sha1_update(&context, buff + 1, l - 1);
+  sha1_final(digest, &context);
 }
 
 static void skip_bignum(unsigned char *buff, size_t l, size_t j, size_t *toff, size_t n)

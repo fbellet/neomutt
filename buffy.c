@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Representation of a mailbox
+ *
+ * @authors
  * Copyright (C) 1996-2000,2010,2013 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2016 Kevin J. McCarthy <kevin@8t8.us>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -46,14 +51,17 @@
 #include "mutt_notmuch.h"
 #endif
 
-static time_t BuffyTime = 0;      /* last time we started checking for mail */
-static time_t BuffyStatsTime = 0; /* last time we check performed mail_check_stats */
-time_t BuffyDoneTime = 0; /* last time we knew for sure how much mail there was. */
-static short BuffyCount = 0;  /* how many boxes with new mail */
-static short BuffyNotify = 0; /* # of unnotified new boxes */
+static time_t BuffyTime = 0; /**< last time we started checking for mail */
+static time_t BuffyStatsTime = 0; /**< last time we check performed mail_check_stats */
+time_t BuffyDoneTime = 0; /**< last time we knew for sure how much mail there was. */
+static short BuffyCount = 0;  /**< how many boxes with new mail */
+static short BuffyNotify = 0; /**< # of unnotified new boxes */
 
-/* Find the last message in the file.
- * upon success return 0. If no message found - return -1 */
+/**
+ * fseek_last_message - Find the last message in the file
+ * @retval 0 on success
+ * @retval -1 if no message found
+ */
 static int fseek_last_message(FILE *f)
 {
   LOFF_T pos;
@@ -99,7 +107,10 @@ static int fseek_last_message(FILE *f)
   return -1;
 }
 
-/* Return 1 if the last message is new */
+/**
+ * test_last_status_new - Is the last message new
+ * @retval 1 if the last message is new
+ */
 static int test_last_status_new(FILE *f)
 {
   struct Header *hdr = NULL;
@@ -163,10 +174,15 @@ static void buffy_free(struct Buffy **mailbox)
   FREE(mailbox);
 }
 
-/* Checks the specified maildir subdir (cur or new) for new mail or mail counts.
- * check_new:   if true, check for new mail.
- * check_stats: if true, count total, new, and flagged messages.
- * Returns 1 if the dir has new mail.
+/**
+ * buffy_maildir_check_dir - Check for new mail / mail counts
+ * @param mailbox     Mailbox to check
+ * @param dir_name    Path to mailbox
+ * @param check_new   if true, check for new mail
+ * @param check_stats if true, count total, new, and flagged messages
+ * @retval 1 if the dir has new mail
+ *
+ * Checks the specified maildir subdir (cur or new) for new mail or mail counts.
  */
 static int buffy_maildir_check_dir(struct Buffy *mailbox, const char *dir_name,
                                    int check_new, int check_stats)
@@ -244,9 +260,11 @@ static int buffy_maildir_check_dir(struct Buffy *mailbox, const char *dir_name,
   return rc;
 }
 
-/* Checks new mail for a maildir mailbox.
- * check_stats: if true, also count total, new, and flagged messages.
- * Returns 1 if the mailbox has new mail.
+/**
+ * buffy_maildir_check - Check for new mail in a maildir mailbox
+ * @param mailbox     Mailbox to check
+ * @param check_stats if true, also count total, new, and flagged messages
+ * @retval 1 if the mailbox has new mail
  */
 static int buffy_maildir_check(struct Buffy *mailbox, int check_stats)
 {
@@ -269,9 +287,12 @@ static int buffy_maildir_check(struct Buffy *mailbox, int check_stats)
   return rc;
 }
 
-/* Checks new mail for an mbox mailbox
- * check_stats: if true, also count total, new, and flagged messages.
- * Returns 1 if the mailbox has new mail.
+/**
+ * buffy_mbox_check - Check for new mail for an mbox mailbox
+ * @param mailbox     Mailbox to check
+ * @param sb          stat(2) information about the mailbox
+ * @param check_stats if true, also count total, new, and flagged messages
+ * @retval 1 if the mailbox has new mail
  */
 static int buffy_mbox_check(struct Buffy *mailbox, struct stat *sb, int check_stats)
 {
@@ -426,7 +447,9 @@ static void buffy_check(struct Buffy *tmp, struct stat *contex_sb, int check_sta
     BuffyNotify++;
 }
 
-/* fetch buffy object for given path, if present */
+/**
+ * buffy_get - fetch buffy object for given path, if present
+ */
 static struct Buffy *buffy_get(const char *path)
 {
   struct Buffy *cur = NULL;
@@ -542,7 +565,10 @@ int mutt_parse_mailboxes(struct Buffer *path, struct Buffer *s,
 
     /* Skip empty tokens. */
     if (!*buf)
+    {
+      FREE(&desc);
       continue;
+    }
 
     /* avoid duplicates */
     p = realpath(buf, f1);
@@ -555,8 +581,13 @@ int mutt_parse_mailboxes(struct Buffer *path, struct Buffer *s,
       }
     }
 
-    if (!*b)
-      *b = buffy_new(buf);
+    if (*b)
+    {
+      FREE(&desc);
+      continue;
+    }
+
+    *b = buffy_new(buf);
 
     (*b)->new = false;
     (*b)->notified = true;
@@ -646,7 +677,10 @@ int mutt_parse_unmailboxes(struct Buffer *path, struct Buffer *s,
   return 0;
 }
 
-/* Check all Incoming for new mail and total/new/flagged messages
+/**
+ * mutt_buffy_check - Check all Incoming for new mail
+ *
+ * Check all Incoming for new mail and total/new/flagged messages
  * force: if true, ignore BuffyTimeout and check for new mail anyway
  */
 int mutt_buffy_check(bool force)
@@ -778,11 +812,12 @@ int mutt_buffy_notify(void)
   return 0;
 }
 
-/*
- * mutt_buffy() -- incoming folders completion routine
+/**
+ * mutt_buffy - incoming folders completion routine
+ * @param s    Buffer containing name of current mailbox
+ * @param slen Buffer length
  *
- * given a folder name, this routine gives the next incoming folder with new
- * mail.
+ * Given a folder name, find the next incoming folder with new mail.
  */
 void mutt_buffy(char *s, size_t slen)
 {
@@ -796,6 +831,8 @@ void mutt_buffy(char *s, size_t slen)
     {
       for (struct Buffy *b = Incoming; b; b = b->next)
       {
+        if (b->magic == MUTT_NOTMUCH) /* only match real mailboxes */
+          continue;
         mutt_expand_path(b->path, sizeof(b->path));
         if ((found || pass) && b->new)
         {

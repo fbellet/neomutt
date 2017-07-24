@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Wrapper around calls to external PGP program
+ *
+ * @authors
  * Copyright (C) 2017 Richard Russon <rich@flatcap.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -25,7 +30,7 @@
 struct Address;
 struct List;
 
-/* The PGP invocation interface - not really beautiful. */
+/* The PGP invocation interface */
 
 void pgp_invoke_import(const char *fname);
 void pgp_invoke_getkeys(struct Address *addr);
@@ -46,7 +51,7 @@ pid_t pgp_invoke_export(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpinfd,
 pid_t pgp_invoke_verify_key(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpinfd,
                             int pgpoutfd, int pgperrfd, const char *uids);
 pid_t pgp_invoke_list_keys(FILE **pgpin, FILE **pgpout, FILE **pgperr, int pgpinfd,
-                           int pgpoutfd, int pgperrfd, pgp_ring_t keyring, struct List *hints);
+                           int pgpoutfd, int pgperrfd, enum PgpRing keyring, struct List *hints);
 pid_t pgp_invoke_traditional(FILE **pgpin, FILE **pgpout, FILE **pgperr,
                              int pgpinfd, int pgpoutfd, int pgperrfd,
                              const char *fname, const char *uids, int flags);

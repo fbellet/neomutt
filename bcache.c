@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Body Caching - local copies of email bodies
+ *
+ * @authors
  * Copyright (C) 2006-2007,2009 Brendan Cully <brendan@kublai.com>
  * Copyright (C) 2006,2009 Rocco Rutte <pdmef@gmx.net>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -33,6 +38,9 @@
 
 static int mutt_bcache_move(struct BodyCache *bcache, const char *id, const char *newid);
 
+/**
+ * struct BodyCache - Local cache of email bodies
+ */
 struct BodyCache
 {
   char path[_POSIX_PATH_MAX];
@@ -74,7 +82,7 @@ static int bcache_path(struct Account *account, const char *mailbox, char *dst, 
 
   mutt_debug(3, "bcache_path: rc: %d, path: '%s'\n", len, dst);
 
-  if (len < 0 || len >= dstlen - 1)
+  if (len < 0 || (size_t) len >= dstlen - 1)
     return -1;
 
   mutt_debug(3, "bcache_path: directory: '%s'\n", dst);

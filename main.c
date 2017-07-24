@@ -1,8 +1,13 @@
 /**
+ * @file
+ * Command line processing
+ *
+ * @authors
  * Copyright (C) 1996-2007,2010,2013 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1999-2007 Thomas Roessler <roessler@does-not-exist.org>
  * Copyright (C) 2004 g10 Code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -175,6 +180,14 @@ static void start_curses(void)
 #define MUTT_NEWS (1 << 5) /* -g and -G */
 #endif
 
+/**
+ * main - Start NeoMutt
+ * @param argc Number of command line arguments
+ * @param argv List of command line arguments
+ * @param env  Copy of the environment
+ * @retval 0 on success
+ * @retval 1 on error
+ */
 int main(int argc, char **argv, char **env)
 {
   char folder[_POSIX_PATH_MAX] = "";
@@ -315,7 +328,8 @@ int main(int argc, char **argv, char **env)
           }
           printf(_("Debugging at level %d.\n"), debuglevel_cmdline);
 #else
-          printf("%s", _("DEBUG was not defined during compilation. -d Ignored.\n"));
+          printf("%s",
+                 _("DEBUG was not defined during compilation. -d Ignored.\n"));
 #endif
           break;
 

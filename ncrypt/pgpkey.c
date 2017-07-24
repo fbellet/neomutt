@@ -1,7 +1,12 @@
 /**
+ * @file
+ * PGP key management routines
+ *
+ * @authors
  * Copyright (C) 1996-1997,2007 Michael R. Elkins <me@mutt.org>
  * Copyright (c) 1998-2003 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -54,6 +59,9 @@
 
 struct List;
 
+/**
+ * struct PgpCache - List of cached PGP keys
+ */
 struct PgpCache
 {
   char *what;
@@ -124,6 +132,9 @@ static struct PgpKeyInfo *pgp_principal_key(struct PgpKeyInfo *key)
  * %[...] date of key using strftime(3)
  */
 
+/**
+ * struct PgpEntry - An entry in a PGP key menu
+ */
 struct PgpEntry
 {
   size_t num;
@@ -133,7 +144,7 @@ struct PgpEntry
 static const char *pgp_entry_fmt(char *dest, size_t destlen, size_t col, int cols,
                                  char op, const char *src, const char *prefix,
                                  const char *ifstring, const char *elsestring,
-                                 unsigned long data, format_flag flags)
+                                 unsigned long data, enum FormatFlag flags)
 {
   char fmt[16];
   struct PgpEntry *entry = NULL;
@@ -280,9 +291,9 @@ static const char *pgp_entry_fmt(char *dest, size_t destlen, size_t col, int col
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, mutt_attach_fmt, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, ifstring, mutt_attach_fmt, data, 0);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, mutt_attach_fmt, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, elsestring, mutt_attach_fmt, data, 0);
   return src;
 }
 
@@ -294,7 +305,7 @@ static void pgp_entry(char *s, size_t l, struct Menu *menu, int num)
   entry.uid = KeyTable[num];
   entry.num = num + 1;
 
-  mutt_FormatString(s, l, 0, MuttIndexWindow->cols, NONULL(PgpEntryFormat),
+  mutt_expando_format(s, l, 0, MuttIndexWindow->cols, NONULL(PgpEntryFormat),
                     pgp_entry_fmt, (unsigned long) &entry, MUTT_FORMAT_ARROWCURSOR);
 }
 
@@ -650,7 +661,7 @@ static struct PgpKeyInfo *pgp_select_key(struct PgpKeyInfo *keys,
   return kp;
 }
 
-struct PgpKeyInfo *pgp_ask_for_key(char *tag, char *whatfor, short abilities, pgp_ring_t keyring)
+struct PgpKeyInfo *pgp_ask_for_key(char *tag, char *whatfor, short abilities, enum PgpRing keyring)
 {
   struct PgpKeyInfo *key = NULL;
   char resp[SHORT_STRING];
@@ -697,7 +708,9 @@ struct PgpKeyInfo *pgp_ask_for_key(char *tag, char *whatfor, short abilities, pg
   /* not reached */
 }
 
-/* generate a public key attachment */
+/**
+ * pgp_make_key_attachment - generate a public key attachment
+ */
 struct Body *pgp_make_key_attachment(char *tempf)
 {
   struct Body *att = NULL;
@@ -800,7 +813,7 @@ static struct PgpKeyInfo **pgp_get_lastp(struct PgpKeyInfo *p)
 }
 
 struct PgpKeyInfo *pgp_getkeybyaddr(struct Address *a, short abilities,
-                                    pgp_ring_t keyring, int oppenc_mode)
+                                    enum PgpRing keyring, int oppenc_mode)
 {
   struct Address *r = NULL, *p = NULL;
   struct List *hints = NULL;
@@ -927,7 +940,7 @@ struct PgpKeyInfo *pgp_getkeybyaddr(struct Address *a, short abilities,
   return NULL;
 }
 
-struct PgpKeyInfo *pgp_getkeybystr(char *p, short abilities, pgp_ring_t keyring)
+struct PgpKeyInfo *pgp_getkeybystr(char *p, short abilities, enum PgpRing keyring)
 {
   struct List *hints = NULL;
   struct PgpKeyInfo *keys = NULL;

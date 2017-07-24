@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Manage where the email is piped to external commands
+ *
+ * @authors
  * Copyright (C) 1996-2000 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2000-2004,2006 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -64,7 +69,7 @@
 
 static const char *ExtPagerProgress = "all";
 
-/* The folder the user last saved to.  Used by ci_save_message() */
+/** The folder the user last saved to.  Used by ci_save_message() */
 static char LastSaveFolder[_POSIX_PATH_MAX] = "";
 
 int mutt_display_message(struct Header *cur)
@@ -262,7 +267,7 @@ void ci_bounce_message(struct Header *h)
   char *err = NULL;
   int rc;
 
-  /* RfC 5322 mandates a From: header, so warn before bouncing
+  /* RFC5322 mandates a From: header, so warn before bouncing
   * messages without one */
   if (h)
   {
@@ -313,13 +318,13 @@ void ci_bounce_message(struct Header *h)
   buf[0] = 0;
   rfc822_write_address(buf, sizeof(buf), adr, 1);
 
-#define extra_space (15 + 7 + 2)
+#define EXTRA_SPACE (15 + 7 + 2)
   snprintf(scratch, sizeof(scratch),
            (h ? _("Bounce message to %s") : _("Bounce messages to %s")), buf);
 
-  if (mutt_strwidth(prompt) > MuttMessageWindow->cols - extra_space)
+  if (mutt_strwidth(prompt) > MuttMessageWindow->cols - EXTRA_SPACE)
   {
-    mutt_format_string(prompt, sizeof(prompt), 0, MuttMessageWindow->cols - extra_space,
+    mutt_simple_format(prompt, sizeof(prompt), 0, MuttMessageWindow->cols - EXTRA_SPACE,
                        FMT_LEFT, 0, scratch, sizeof(scratch), 0);
     safe_strcat(prompt, sizeof(prompt), "...?");
   }
@@ -382,7 +387,11 @@ static void pipe_msg(struct Header *h, FILE *fp, int decode, int print)
 }
 
 
-/* the following code is shared between printing and piping */
+/**
+ * _mutt_pipe_message - Pipe message to a command
+ *
+ * The following code is shared between printing and piping.
+ */
 static int _mutt_pipe_message(struct Header *h, char *cmd, int decode,
                               int print, int split, char *sep)
 {
@@ -508,8 +517,8 @@ void mutt_print_message(struct Header *h)
     return;
   }
 
-  if (query_quadoption(OPT_PRINT, h ? _("Print message?") :
-                                      _("Print tagged messages?")) != MUTT_YES)
+  if (query_quadoption(OPT_PRINT,
+                       h ? _("Print message?") : _("Print tagged messages?")) != MUTT_YES)
     return;
 
   if (_mutt_pipe_message(h, PrintCmd, option(OPTPRINTDECODE), 1,
@@ -590,7 +599,9 @@ int mutt_select_sort(int reverse)
   return (Sort != method ? 0 : -1); /* no need to resort if it's the same */
 }
 
-/* invoke a command in a subshell */
+/**
+ * mutt_shell_escape - invoke a command in a subshell
+ */
 void mutt_shell_escape(void)
 {
   char buf[LONG_STRING];
@@ -612,7 +623,9 @@ void mutt_shell_escape(void)
   }
 }
 
-/* enter a mutt command */
+/**
+ * mutt_enter_command - enter a mutt command
+ */
 void mutt_enter_command(void)
 {
   struct Buffer err, token;
@@ -695,7 +708,7 @@ static void set_copy_flags(struct Header *hdr, int decode, int decrypt,
 
     if (!decrypt) /* If decode doesn't kick in for decrypt, */
     {
-      *chflags |= CH_DECODE; /* then decode RFC 2047 headers, */
+      *chflags |= CH_DECODE; /* then decode RFC2047 headers, */
 
       if (option(OPTWEED))
       {
@@ -730,7 +743,11 @@ int _mutt_save_message(struct Header *h, struct Context *ctx, int delete, int de
   return 0;
 }
 
-/* returns 0 if the copy/save was successful, or -1 on error/abort */
+/**
+ * mutt_save_message - Save an email
+ * @retval 0 if the copy/save was successful
+ * @retval -1 on error/abort
+ */
 int mutt_save_message(struct Header *h, int delete, int decode, int decrypt)
 {
   int i, need_buffy_cleanup;

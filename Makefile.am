@@ -65,7 +65,7 @@ LIBIMAP = -Limap -limap
 LIBIMAPDEPS = $(top_srcdir)/imap/imap.h imap/libimap.a
 
 mutt_LDADD = $(MUTT_LIB_OBJECTS) $(LIBOBJS) $(HCACHE_LIBS) $(NCRYPT_LIBS) \
-	$(LIBIMAP) $(MUTTLIBS) $(LIBICONV) $(GPGME_LIBS) $(INTLLIBS)
+	$(LIBIMAP) $(LIBICONV) $(GPGME_LIBS) $(INTLLIBS)
 
 mutt_DEPENDENCIES = $(MUTT_LIB_OBJECTS) $(LIBOBJS) $(LIBIMAPDEPS) \
 	$(HCACHE_DEPS) $(NCRYPT_DEPS) $(INTLDEPS)
@@ -162,3 +162,10 @@ uninstall-local:
 		rm $(DESTDIR)$(sysconfdir)/$${i}.dist; \
 	done
 
+distclean-local:
+	rm -fr html
+
+html:
+	doxygen doxygen/doxygen.conf
+
+.PHONY: html

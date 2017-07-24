@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Parse the output of CLI PGP program
+ *
+ * @authors
  * Copyright (C) 1998-2000,2003 Werner Koch <werner.koch@guug.de>
  * Copyright (C) 1999-2003 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -23,7 +28,6 @@
  *
  * Nowadays, we are using an external pubring lister with PGP which mimics
  * gpg's output format.
- *
  */
 
 #include "config.h"
@@ -374,7 +378,7 @@ bail:
   return NULL;
 }
 
-struct PgpKeyInfo *pgp_get_candidates(pgp_ring_t keyring, struct List *hints)
+struct PgpKeyInfo *pgp_get_candidates(enum PgpRing keyring, struct List *hints)
 {
   FILE *fp = NULL;
   pid_t thepid;

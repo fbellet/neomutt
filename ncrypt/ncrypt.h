@@ -1,7 +1,12 @@
 /**
+ * @file
+ * API for encryption/signing of emails
+ *
+ * @authors
  * Copyright (C) 2003 Werner Koch <wk@gnupg.org>
  * Copyright (C) 2004 g10code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -97,93 +102,39 @@ struct State;
 #define KEYFLAG_ABILITIES (KEYFLAG_CANSIGN | KEYFLAG_CANENCRYPT | KEYFLAG_PREFER_ENCRYPTION | KEYFLAG_PREFER_SIGNING)
 
 /* Some prototypes -- old crypt.h. */
-
 int mutt_protect(struct Header *msg, char *keylist);
-
 int mutt_is_multipart_encrypted(struct Body *b);
-
 int mutt_is_valid_multipart_pgp_encrypted(struct Body *b);
-
 int mutt_is_malformed_multipart_pgp_encrypted(struct Body *b);
-
 int mutt_is_multipart_signed(struct Body *b);
-
 int mutt_is_application_pgp(struct Body *m);
-
 int mutt_is_application_smime(struct Body *m);
-
 int mutt_signed_handler(struct Body *a, struct State *s);
-
 int mutt_parse_crypt_hdr(const char *p, int set_empty_signas, int crypt_app);
 
 /* -- crypt.c -- */
-
-/* Check out the type of encryption used and set the cached status
-   values if there are any. */
 int crypt_query(struct Body *m);
-
-/* Fixme: To be documented. */
 void crypt_extract_keys_from_messages(struct Header *h);
-
-/* Do a quick check to make sure that we can find all of the
-   encryption keys if the user has requested this service.
-   Return the list of keys in KEYLIST.
-   If oppenc_mode is true, only keys that can be determined without
-   prompting will be used.  */
 int crypt_get_keys(struct Header *msg, char **keylist, int oppenc_mode);
-
-/* Check if all recipients keys can be automatically determined.
- * Enable encryption if they can, otherwise disable encryption.  */
 void crypt_opportunistic_encrypt(struct Header *msg);
-
-/* Forget a passphrase and display a message. */
 void crypt_forget_passphrase(void);
-
-/* Check that we have a usable passphrase, ask if not. */
 int crypt_valid_passphrase(int flags);
 
 /* -- cryptglue.c -- */
-
-/* Show a message that a backend will be invoked. */
 void crypt_invoke_message(int type);
-
-/* Decrypt a PGP/MIME message. */
 int crypt_pgp_decrypt_mime(FILE *a, FILE **b, struct Body *c, struct Body **d);
-
-/* MIME handler for the application/pgp content-type. */
 int crypt_pgp_application_pgp_handler(struct Body *m, struct State *s);
-
-/* MIME handler for an PGP/MIME encrypted message. */
 int crypt_pgp_encrypted_handler(struct Body *a, struct State *s);
-
-/* fixme: needs documentation. */
 void crypt_pgp_invoke_getkeys(struct Address *addr);
-
-/* Check for a traditional PGP message in body B. */
 int crypt_pgp_check_traditional(FILE *fp, struct Body *b, int tagged_only);
-
-/* Generate a PGP public key attachment. */
 struct Body *crypt_pgp_make_key_attachment(char *tempf);
-
 int crypt_pgp_send_menu(struct Header *msg);
-
-/* fixme: needs documentation */
 void crypt_pgp_extract_keys_from_attachment_list(FILE *fp, int tag, struct Body *top);
-
-/* Decrypt an S/MIME message. */
 int crypt_smime_decrypt_mime(FILE *a, FILE **b, struct Body *c, struct Body **d);
-
-/* MIME handler for the application/smime content-type. */
 int crypt_smime_application_smime_handler(struct Body *m, struct State *s);
-
-/* fixme: Needs documentation. */
 void crypt_smime_getkeys(struct Envelope *env);
-
-/* Check that the sender matches. */
 int crypt_smime_verify_sender(struct Header *h);
-
 int crypt_smime_send_menu(struct Header *msg);
-
 void crypt_init(void);
 
 #endif /* _NCRYPT_NCRYPT_H */

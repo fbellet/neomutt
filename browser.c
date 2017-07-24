@@ -1,6 +1,11 @@
 /**
+ * @file
+ * GUI component for displaying/selecting items from a list
+ *
+ * @authors
  * Copyright (C) 1996-2000,2007,2010,2013 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -88,6 +93,9 @@ static struct Mapping FolderNewsHelp[] = {
 };
 #endif
 
+/**
+ * struct Folder - A folder/dir in the browser
+ */
 struct Folder
 {
   struct FolderFile *ff;
@@ -97,7 +105,11 @@ struct Folder
 static char OldLastDir[_POSIX_PATH_MAX] = "";
 static char LastDir[_POSIX_PATH_MAX] = "";
 
-/* Frees up the memory allocated for the local-global variables.  */
+/**
+ * destroy_state - Free the BrowserState
+ *
+ * Frees up the memory allocated for the local-global variables.
+ */
 static void destroy_state(struct BrowserState *state)
 {
   for (int c = 0; c < state->entrylen; c++)
@@ -185,9 +197,12 @@ static int browser_compare_count_new(const void *a, const void *b)
   return ((BrowserSort & SORT_REVERSE) ? -r : r);
 }
 
-/* Wild compare function that calls the others. It's useful
- * because it provides a way to tell "../" is always on the
- * top of the list, independently of the sort method.
+/**
+ * browser_compare - Sort the items in the browser
+ *
+ * Wild compare function that calls the others. It's useful because it provides
+ * a way to tell "../" is always on the top of the list, independently of the
+ * sort method.
  */
 static int browser_compare(const void *a, const void *b)
 {
@@ -217,8 +232,11 @@ static int browser_compare(const void *a, const void *b)
   }
 }
 
-/* Call to qsort using browser_compare function. Some
- * specific sort methods are not used via NNTP.
+/**
+ * browser_sort - Sort the entries in the browser
+ *
+ * Call to qsort using browser_compare function.
+ * Some specific sort methods are not used via NNTP.
  */
 static void browser_sort(struct BrowserState *state)
 {
@@ -256,7 +274,7 @@ static int link_is_dir(const char *folder, const char *path)
 static const char *folder_format_str(char *dest, size_t destlen, size_t col, int cols,
                                      char op, const char *src, const char *fmt,
                                      const char *ifstring, const char *elsestring,
-                                     unsigned long data, format_flag flags)
+                                     unsigned long data, enum FormatFlag flags)
 {
   char fn[SHORT_STRING], tmp[SHORT_STRING], permission[11];
   char date[SHORT_STRING], *t_fmt = NULL;
@@ -468,9 +486,9 @@ static const char *folder_format_str(char *dest, size_t destlen, size_t col, int
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, folder_format_str, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, ifstring, folder_format_str, data, 0);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, folder_format_str, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, elsestring, folder_format_str, data, 0);
 
   return src;
 }
@@ -479,7 +497,7 @@ static const char *folder_format_str(char *dest, size_t destlen, size_t col, int
 static const char *newsgroup_format_str(char *dest, size_t destlen, size_t col, int cols,
                                         char op, const char *src, const char *fmt,
                                         const char *ifstring, const char *elsestring,
-                                        unsigned long data, format_flag flags)
+                                        unsigned long data, enum FormatFlag flags)
 {
   char fn[SHORT_STRING], tmp[SHORT_STRING];
   struct Folder *folder = (struct Folder *) data;
@@ -517,10 +535,10 @@ static const char *newsgroup_format_str(char *dest, size_t destlen, size_t col, 
       if (flags & MUTT_FORMAT_OPTIONAL)
       {
         if (folder->ff->nd->unread != 0)
-          mutt_FormatString(dest, destlen, col, cols, ifstring,
+          mutt_expando_format(dest, destlen, col, cols, ifstring,
                             newsgroup_format_str, data, flags);
         else
-          mutt_FormatString(dest, destlen, col, cols, elsestring,
+          mutt_expando_format(dest, destlen, col, cols, elsestring,
                             newsgroup_format_str, data, flags);
       }
       else if (Context && Context->data == folder->ff->nd)
@@ -542,12 +560,12 @@ static const char *newsgroup_format_str(char *dest, size_t destlen, size_t col, 
         snprintf(dest, destlen, tmp, Context->new);
       }
       else if (option(OPTMARKOLD) &&
-               folder->ff->nd->lastCached >= folder->ff->nd->firstMessage &&
-               folder->ff->nd->lastCached <= folder->ff->nd->lastMessage)
+               folder->ff->nd->last_cached >= folder->ff->nd->first_message &&
+               folder->ff->nd->last_cached <= folder->ff->nd->last_message)
       {
         snprintf(tmp, sizeof(tmp), "%%%sd", fmt);
         snprintf(dest, destlen, tmp,
-                 folder->ff->nd->lastMessage - folder->ff->nd->lastCached);
+                 folder->ff->nd->last_message - folder->ff->nd->last_cached);
       }
       else
       {
@@ -637,7 +655,9 @@ static void init_state(struct BrowserState *state, struct Menu *menu)
     menu->data = state->entry;
 }
 
-/* get list of all files/newsgroups with mask */
+/**
+ * examine_directory - get list of all files/newsgroups with mask
+ */
 static int examine_directory(struct Menu *menu, struct BrowserState *state,
                              char *d, const char *prefix)
 {
@@ -760,7 +780,9 @@ static int examine_vfolders(struct Menu *menu, struct BrowserState *state)
 }
 #endif
 
-/* get list of mailboxes/subscribed newsgroups */
+/**
+ * examine_mailboxes - Get list of mailboxes/subscribed newsgroups
+ */
 static int examine_mailboxes(struct Menu *menu, struct BrowserState *state)
 {
   struct stat s;
@@ -878,11 +900,11 @@ static void folder_entry(char *s, size_t slen, struct Menu *menu, int num)
 
 #ifdef USE_NNTP
   if (option(OPTNEWS))
-    mutt_FormatString(s, slen, 0, MuttIndexWindow->cols, NONULL(GroupFormat), newsgroup_format_str,
+    mutt_expando_format(s, slen, 0, MuttIndexWindow->cols, NONULL(GroupFormat), newsgroup_format_str,
                       (unsigned long) &folder, MUTT_FORMAT_ARROWCURSOR);
   else
 #endif
-    mutt_FormatString(s, slen, 0, MuttIndexWindow->cols, NONULL(FolderFormat),
+    mutt_expando_format(s, slen, 0, MuttIndexWindow->cols, NONULL(FolderFormat),
                       folder_format_str, (unsigned long) &folder, MUTT_FORMAT_ARROWCURSOR);
 }
 
@@ -894,14 +916,16 @@ static void vfolder_entry(char *s, size_t slen, struct Menu *menu, int num)
   folder.ff = &((struct FolderFile *) menu->data)[num];
   folder.num = num;
 
-  mutt_FormatString(s, slen, 0, MuttIndexWindow->cols, NONULL(VirtFolderFormat),
+  mutt_expando_format(s, slen, 0, MuttIndexWindow->cols, NONULL(VirtFolderFormat),
                     folder_format_str, (unsigned long) &folder, MUTT_FORMAT_ARROWCURSOR);
 }
 #endif
 
-/*
- * This function takes a menu and a state and defines the current
- * entry that should be highlighted.
+/**
+ * browser_highlight_default - Decide which browser item should be highlighted
+ *
+ * This function takes a menu and a state and defines the current entry that
+ * should be highlighted.
  */
 static void browser_highlight_default(struct BrowserState *state, struct Menu *menu)
 {
@@ -1020,11 +1044,12 @@ static int file_tag(struct Menu *menu, int n, int m)
   return ff->tagged - ot;
 }
 
-/* Public function
+/**
+ * mutt_browser_select_dir - Remember the last directory selected
  *
- * This function helps the browser to know which directory has
- * been selected. It should be called anywhere a confirm hit is done
- * to open a new directory/file which is a maildir/mbox.
+ * This function helps the browser to know which directory has been selected.
+ * It should be called anywhere a confirm hit is done to open a new
+ * directory/file which is a maildir/mbox.
  *
  * We could check if the sort method is appropriate with this feature.
  */
@@ -1248,7 +1273,7 @@ void _mutt_select_file(char *f, size_t flen, int flags, char ***files, int *numf
 #endif
       if (buffy)
   {
-    examine_mailboxes (NULL, &state);
+    examine_mailboxes(NULL, &state);
   }
   else
 #ifdef USE_IMAP
@@ -1808,7 +1833,7 @@ void _mutt_select_file(char *f, size_t flen, int flags, char ***files, int *numf
 
         if (buffy)
         {
-	        examine_mailboxes (menu, &state);
+          examine_mailboxes(menu, &state);
         }
 #ifdef USE_IMAP
         else if (mx_is_imap(LastDir))
@@ -1927,7 +1952,7 @@ void _mutt_select_file(char *f, size_t flen, int flags, char ***files, int *numf
             if (nntp_data)
               nntp_data->deleted = true;
           }
-          nntp_active_fetch(nserv);
+          nntp_active_fetch(nserv, 1);
           nntp_newsrc_update(nserv);
           nntp_newsrc_close(nserv);
 

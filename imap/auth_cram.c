@@ -1,6 +1,11 @@
 /**
+ * @file
+ * IMAP CRAM-MD5 authentication method
+ *
+ * @authors
  * Copyright (C) 1999-2001,2005 Brendan Cully <brendan@kublai.com>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -36,8 +41,10 @@
 /* forward declarations */
 static void hmac_md5(const char *password, char *challenge, unsigned char *response);
 
-/* imap_auth_cram_md5: AUTH=CRAM-MD5 support. */
-imap_auth_res_t imap_auth_cram_md5(struct ImapData *idata, const char *method)
+/**
+ * imap_auth_cram_md5 - imap_auth_cram_md5: AUTH=CRAM-MD5 support
+ */
+enum ImapAuthRes imap_auth_cram_md5(struct ImapData *idata, const char *method)
 {
   char ibuf[LONG_STRING * 2], obuf[LONG_STRING];
   unsigned char hmac_response[MD5_DIGEST_LEN];
@@ -57,11 +64,11 @@ imap_auth_res_t imap_auth_cram_md5(struct ImapData *idata, const char *method)
 
   imap_cmd_start(idata, "AUTHENTICATE CRAM-MD5");
 
-  /* From RFC 2195:
+  /* From RFC2195:
    * The data encoded in the first ready response contains a presumptively
    * arbitrary string of random digits, a timestamp, and the fully-qualified
    * primary host name of the server. The syntax of the unencoded form must
-   * correspond to that of an RFC 822 'msg-id' [RFC822] as described in [POP3].
+   * correspond to that of an RFC822 'msg-id' [RFC822] as described in [POP3].
    */
   do
     rc = imap_cmd_step(idata);
@@ -132,7 +139,9 @@ bail:
   return IMAP_AUTH_FAILURE;
 }
 
-/* hmac_md5: produce CRAM-MD5 challenge response. */
+/**
+ * hmac_md5 - hmac_md5: produce CRAM-MD5 challenge response
+ */
 static void hmac_md5(const char *password, char *challenge, unsigned char *response)
 {
   struct Md5Ctx ctx;

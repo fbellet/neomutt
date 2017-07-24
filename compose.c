@@ -1,7 +1,12 @@
 /**
+ * @file
+ * GUI editor for an email's headers
+ *
+ * @authors
  * Copyright (C) 1996-2000,2002,2007,2010,2012 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2004 g10 Code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -71,8 +76,10 @@ static const char *There_are_no_attachments = N_("There are no attachments.");
     break;                                                                     \
   }
 
-
-enum
+/**
+ * enum HeaderField - Ordered list of headers for the compose screen
+ */
+enum HeaderField
 {
   HDR_FROM = 0,
   HDR_TO,
@@ -185,11 +192,13 @@ static void calc_header_width_padding(int idx, const char *header, int calc_max)
 }
 
 
-/* The padding needed for each header is strlen() + max_width - strwidth().
+/**
+ * init_header_padding - Calculate how much padding the compose table will need
  *
- * calc_header_width_padding sets each entry in HeaderPadding to
- * strlen - width.  Then, afterwards, we go through and add max_width
- * to each entry.
+ * The padding needed for each header is strlen() + max_width - strwidth().
+ *
+ * calc_header_width_padding sets each entry in HeaderPadding to strlen -
+ * width.  Then, afterwards, we go through and add max_width to each entry.
  */
 static void init_header_padding(void)
 {
@@ -218,7 +227,7 @@ static void init_header_padding(void)
 
 static void snd_entry(char *b, size_t blen, struct Menu *menu, int num)
 {
-  mutt_FormatString(b, blen, 0, MuttIndexWindow->cols, NONULL(AttachFormat), mutt_attach_fmt,
+  mutt_expando_format(b, blen, 0, MuttIndexWindow->cols, NONULL(AttachFormat), mutt_attach_fmt,
                     (unsigned long) (((struct AttachPtr **) menu->data)[num]),
                     MUTT_FORMAT_STAT_FILE | MUTT_FORMAT_ARROWCURSOR);
 }
@@ -403,13 +412,16 @@ static void draw_envelope(struct Header *msg, char *fcc)
   }
   else
   {
-    mutt_window_mvprintw(MuttIndexWindow, HDR_TO, 0, "%*s", HeaderPadding[HDR_NEWSGROUPS], Prompts[HDR_NEWSGROUPS]);
+    mutt_window_mvprintw(MuttIndexWindow, HDR_TO, 0, "%*s",
+                         HeaderPadding[HDR_NEWSGROUPS], Prompts[HDR_NEWSGROUPS]);
     mutt_paddstr(W, NONULL(msg->env->newsgroups));
-    mutt_window_mvprintw(MuttIndexWindow, HDR_CC, 0, "%*s", HeaderPadding[HDR_FOLLOWUPTO], Prompts[HDR_FOLLOWUPTO]);
+    mutt_window_mvprintw(MuttIndexWindow, HDR_CC, 0, "%*s",
+                         HeaderPadding[HDR_FOLLOWUPTO], Prompts[HDR_FOLLOWUPTO]);
     mutt_paddstr(W, NONULL(msg->env->followup_to));
     if (option(OPTXCOMMENTTO))
     {
-      mutt_window_mvprintw(MuttIndexWindow, HDR_BCC, 0, "%*s", HeaderPadding[HDR_XCOMMENTTO], Prompts[HDR_XCOMMENTTO]);
+      mutt_window_mvprintw(MuttIndexWindow, HDR_BCC, 0, "%*s",
+                           HeaderPadding[HDR_XCOMMENTTO], Prompts[HDR_XCOMMENTTO]);
       mutt_paddstr(W, NONULL(msg->env->x_comment_to));
     }
   }
@@ -518,6 +530,9 @@ static void update_idx(struct Menu *menu, struct AttachPtr **idx, short idxlen)
   return;
 }
 
+/**
+ * struct ComposeRedrawData - Keep track when the compose screen needs redrawing
+ */
 struct ComposeRedrawData
 {
   struct Header *msg;
@@ -572,13 +587,13 @@ static void compose_menu_redraw(struct Menu *menu)
 }
 
 
-/*
- * cum_attachs_size: Cumulative Attachments Size
+/**
+ * cum_attachs_size - Cumulative Attachments Size
+ * @param menu Menu listing attachments
+ * @retval n Number of bytes in attachments
  *
- * Returns the total number of bytes used by the attachments in the
- * attachment list _after_ content-transfer-encodings have been
- * applied.
- *
+ * Returns the total number of bytes used by the attachments in the attachment
+ * list _after_ content-transfer-encodings have been applied.
  */
 static unsigned long cum_attachs_size(struct Menu *menu)
 {
@@ -615,13 +630,13 @@ static unsigned long cum_attachs_size(struct Menu *menu)
   return s;
 }
 
-/*
- * compose_format_str()
+/**
+ * compose_format_str - Format strings like printf()
  *
- * %a = total number of attachments
- * %h = hostname  [option]
- * %l = approx. length of current message (in bytes)
- * %v = Mutt version
+ * * \%a Total number of attachments
+ * * \%h Hostname  [option]
+ * * \%l Approx. length of current message (in bytes)
+ * * \%v Mutt version
  *
  * This function is similar to status_format_str().  Look at that function for
  * help when modifying this function.
@@ -629,7 +644,7 @@ static unsigned long cum_attachs_size(struct Menu *menu)
 static const char *compose_format_str(char *buf, size_t buflen, size_t col, int cols,
                                       char op, const char *src, const char *prefix,
                                       const char *ifstring, const char *elsestring,
-                                      unsigned long data, format_flag flags)
+                                      unsigned long data, enum FormatFlag flags)
 {
   char fmt[SHORT_STRING], tmp[SHORT_STRING];
   int optional = (flags & MUTT_FORMAT_OPTIONAL);
@@ -679,14 +694,14 @@ static const char *compose_format_str(char *buf, size_t buflen, size_t col, int 
 static void compose_status_line(char *buf, size_t buflen, size_t col, int cols,
                                 struct Menu *menu, const char *p)
 {
-  mutt_FormatString(buf, buflen, col, cols, p, compose_format_str, (unsigned long) menu, 0);
+  mutt_expando_format(buf, buflen, col, cols, p, compose_format_str, (unsigned long) menu, 0);
 }
 
-/* return values:
- *
- * 1    message should be postponed
- * 0    normal exit
- * -1   abort message
+/**
+ * mutt_compose_menu - Allow the user to edit the message envelope
+ * @retval  1 Message should be postponed
+ * @retval  0 Normal exit
+ * @retval -1 Abort message
  */
 int mutt_compose_menu(struct Header *msg, /* structure for new message */
                       char *fcc, /* where to save a copy of the message */
@@ -1187,9 +1202,10 @@ int mutt_compose_menu(struct Header *msg, /* structure for new message */
 
       case OP_COMPOSE_EDIT_DESCRIPTION:
         CHECK_COUNT;
-        strfcpy(buf, idx[menu->current]->content->description ?
-                         idx[menu->current]->content->description :
-                         "",
+        strfcpy(buf,
+                idx[menu->current]->content->description ?
+                    idx[menu->current]->content->description :
+                    "",
                 sizeof(buf));
         /* header names should not be translated */
         if (mutt_get_field("Description: ", buf, sizeof(buf), 0) == 0)
@@ -1576,7 +1592,8 @@ int mutt_compose_menu(struct Header *msg, /* structure for new message */
         {
           if (msg->security & (ENCRYPT | SIGN))
           {
-            if (mutt_yesorno(_("S/MIME already selected. Clear and continue ? "), MUTT_YES) != MUTT_YES)
+            if (mutt_yesorno(
+                    _("S/MIME already selected. Clear and continue ? "), MUTT_YES) != MUTT_YES)
             {
               mutt_clear_error();
               break;

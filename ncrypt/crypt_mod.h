@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Register crypto modules
+ *
+ * @authors
  * Copyright (C) 2017 Richard Russon <rich@flatcap.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -64,8 +69,10 @@ typedef void (*crypt_func_init_t)(void);
 
 typedef void (*crypt_func_set_sender_t)(const char *sender);
 
-/*
-   A structure to keep all crypto module functions together.
+/**
+ * struct CryptModuleFunctions - Crypto API for signing/verifying/encrypting
+ *
+ * A structure to keep all crypto module functions together.
  */
 typedef struct CryptModuleFunctions
 {
@@ -98,12 +105,14 @@ typedef struct CryptModuleFunctions
   crypt_func_smime_invoke_import_t      smime_invoke_import;
 } crypt_module_functions_t;
 
-/*
-   A structure to describe a crypto module.
+/**
+ * struct CryptModuleSpecs - Crypto API
+ *
+ * A structure to describe a crypto module.
  */
 typedef struct CryptModuleSpecs
 {
-  int identifier; /* Identifying bit.  */
+  int identifier; /**< Identifying bit */
   crypt_module_functions_t functions;
 } * crypt_module_specs_t;
 
@@ -114,14 +123,14 @@ typedef struct CryptModuleSpecs
 void crypto_module_register(crypt_module_specs_t specs);
 crypt_module_specs_t crypto_module_lookup(int identifier);
 
-/* If the crypto module identifier by IDENTIFIER has been registered,
+/** If the crypto module identifier by IDENTIFIER has been registered,
    call its function FUNC.  Do nothing else.  This may be used as an
    expression. */
 #define CRYPT_MOD_CALL_CHECK(identifier, func)                                 \
   (crypto_module_lookup(APPLICATION_##identifier) &&                           \
    (crypto_module_lookup(APPLICATION_##identifier))->functions.func)
 
-/* Call the function FUNC in the crypto module identified by
+/** Call the function FUNC in the crypto module identified by
    IDENTIFIER. This may be used as an expression. */
 #define CRYPT_MOD_CALL(identifier, func)                                       \
   *(crypto_module_lookup(APPLICATION_##identifier))->functions.func

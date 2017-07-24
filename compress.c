@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Compressed mbox local mailbox type
+ *
+ * @authors
  * Copyright (C) 1997 Alain Penders <Alain@Finale-Dev.com>
  * Copyright (C) 2016 Richard Russon <rich@flatcap.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -49,28 +54,26 @@ struct Header;
  */
 struct CompressInfo
 {
-  const char *append;      /* append-hook command */
-  const char *close;       /* close-hook  command */
-  const char *open;        /* open-hook   command */
-  off_t size;              /* size of the compressed file */
-  struct MxOps *child_ops; /* callbacks of de-compressed file */
-  int locked;              /* if realpath is locked */
-  FILE *lockfp;            /* fp used for locking */
+  const char *append;      /**< append-hook command */
+  const char *close;       /**< close-hook  command */
+  const char *open;        /**< open-hook   command */
+  off_t size;              /**< size of the compressed file */
+  struct MxOps *child_ops; /**< callbacks of de-compressed file */
+  int locked;              /**< if realpath is locked */
+  FILE *lockfp;            /**< fp used for locking */
 };
 
 
 /**
  * lock_realpath - Try to lock the ctx->realpath
- * @ctx:  Mailbox to lock
- * @excl: Lock exclusively?
+ * @param ctx  Mailbox to lock
+ * @param excl Lock exclusively?
+ * @retval 1 Success (locked or readonly)
+ * @retval 0 Error (can't lock the file)
  *
  * Try to (exclusively) lock the mailbox.  If we succeed, then we mark the
  * mailbox as locked.  If we fail, but we didn't want exclusive rights, then
  * the mailbox will be marked readonly.
- *
- * Returns:
- *      1: Success (locked or readonly)
- *      0: Error (can't lock the file)
  */
 static int lock_realpath(struct Context *ctx, int excl)
 {
@@ -110,7 +113,7 @@ static int lock_realpath(struct Context *ctx, int excl)
 
 /**
  * unlock_realpath - Unlock the ctx->realpath
- * @ctx: Mailbox to unlock
+ * @param ctx Mailbox to unlock
  *
  * Unlock a mailbox previously locked by lock_mailbox().
  */
@@ -134,15 +137,13 @@ static void unlock_realpath(struct Context *ctx)
 
 /**
  * setup_paths - Set the mailbox paths
- * @ctx: Mailbox to modify
+ * @param ctx Mailbox to modify
+ * @retval  0 Success
+ * @retval -1 Error
  *
  * Save the compressed filename in ctx->realpath.
  * Create a temporary filename and put its name in ctx->path.
  * The temporary file is created to prevent symlink attacks.
- *
- * Returns:
- *      0: Success
- *      -1: Error
  */
 static int setup_paths(struct Context *ctx)
 {
@@ -169,11 +170,9 @@ static int setup_paths(struct Context *ctx)
 
 /**
  * get_size - Get the size of a file
- * @path: File to measure
- *
- * Returns:
- *      number: Size in bytes
- *      0:      On error
+ * @param path File to measure
+ * @retval n Size in bytes
+ * @retval 0 On error
  */
 static int get_size(const char *path)
 {
@@ -189,7 +188,7 @@ static int get_size(const char *path)
 
 /**
  * store_size - Save the size of the compressed file
- * @ctx: Mailbox
+ * @param ctx Mailbox
  *
  * Save the compressed file size in the compress_info struct.
  */
@@ -207,8 +206,10 @@ static void store_size(const struct Context *ctx)
 
 /**
  * find_hook - Find a hook to match a path
- * @type: Type of hook, e.g. MUTT_CLOSEHOOK
- * @path: Filename to test
+ * @param type Type of hook, e.g. #MUTT_CLOSEHOOK
+ * @param path Filename to test
+ * @retval string Matching hook command
+ * @retval NULL   No matches
  *
  * Each hook has a type and a pattern.
  * Find a command that matches the type and path supplied. e.g.
@@ -217,11 +218,7 @@ static void store_size(const struct Context *ctx)
  *      open-hook '\.gz$' "gzip -cd '%f' > '%t'"
  *
  * Call:
- *      find_hook (MUTT_OPENHOOK, "myfile.gz");
- *
- * Returns:
- *      string: Matching hook command
- *      NULL:   No matches
+ *      find_hook (#MUTT_OPENHOOK, "myfile.gz");
  */
 static const char *find_hook(int type, const char *path)
 {
@@ -237,13 +234,11 @@ static const char *find_hook(int type, const char *path)
 
 /**
  * set_compress_info - Find the compress hooks for a mailbox
- * @ctx: Mailbox to examine
+ * @param ctx Mailbox to examine
+ * @retval ptr  CompressInfo Hook info for the mailbox's path
+ * @retval NULL On error
  *
  * When a mailbox is opened, we check if there are any matching hooks.
- *
- * Returns:
- *      CompressInfo: Hook info for the mailbox's path
- *      NULL:          On error
  */
 static struct CompressInfo *set_compress_info(struct Context *ctx)
 {
@@ -272,8 +267,8 @@ static struct CompressInfo *set_compress_info(struct Context *ctx)
 }
 
 /**
- * free_compress_info - Frees the compress info members and structure.
- * @ctx: Mailbox to free compress_info for.
+ * free_compress_info - Frees the compress info members and structure
+ * @param ctx Mailbox to free compress_info for
  */
 static void free_compress_info(struct Context *ctx)
 {
@@ -293,10 +288,9 @@ static void free_compress_info(struct Context *ctx)
 }
 
 /**
- * escape_path - Escapes single quotes in a path for a command string.
- * @src - the path to escape.
- *
- * Returns: a pointer to the escaped string.
+ * escape_path - Escapes single quotes in a path for a command string
+ * @param src the path to escape
+ * @retval ptr The escaped string
  */
 static char *escape_path(char *src)
 {
@@ -336,27 +330,26 @@ static char *escape_path(char *src)
 
 /**
  * cb_format_str - Expand the filenames in the command string
- * @dest:        Buffer in which to save string
- * @destlen:     Buffer length
- * @col:         Starting column, UNUSED
- * @cols:        Number of screen columns, UNUSED
- * @op:          printf-like operator, e.g. 't'
- * @src:         printf-like format string
- * @fmt:         Field formatting string, UNUSED
- * @ifstring:    If condition is met, display this string, UNUSED
- * @elsestring:  Otherwise, display this string, UNUSED
- * @data:        Pointer to the mailbox Context
- * @flags:       Format flags, UNUSED
+ * @param dest        Buffer in which to save string
+ * @param destlen     Buffer length
+ * @param col         Starting column, UNUSED
+ * @param cols        Number of screen columns, UNUSED
+ * @param op          printf-like operator, e.g. 't'
+ * @param src         printf-like format string
+ * @param fmt         Field formatting string, UNUSED
+ * @param ifstring    If condition is met, display this string, UNUSED
+ * @param elsestring  Otherwise, display this string, UNUSED
+ * @param data        Pointer to the mailbox Context
+ * @param flags       Format flags, UNUSED
+ * @retval src (unchanged)
  *
- * cb_format_str is a callback function for mutt_FormatString.  It understands
+ * cb_format_str is a callback function for mutt_expando_format.  It understands
  * two operators. '%f' : 'from' filename, '%t' : 'to' filename.
- *
- * Returns: src (unchanged)
  */
 static const char *cb_format_str(char *dest, size_t destlen, size_t col, int cols,
                                  char op, const char *src, const char *fmt,
                                  const char *ifstring, const char *elsestring,
-                                 unsigned long data, format_flag flags)
+                                 unsigned long data, enum FormatFlag flags)
 {
   if (!dest || (data == 0))
     return src;
@@ -379,12 +372,13 @@ static const char *cb_format_str(char *dest, size_t destlen, size_t col, int col
 
 /**
  * expand_command_str - Expand placeholders in command string
- * @ctx:    Mailbox for paths
- * @buf:    Buffer to store the command
- * @buflen: Size of the buffer
+ * @param ctx    Mailbox for paths
+ * @param cmd    Template command to be expanded
+ * @param buf    Buffer to store the command
+ * @param buflen Size of the buffer
  *
  * This function takes a hook command and expands the filename placeholders
- * within it.  The function calls mutt_FormatString() to do the replacement
+ * within it.  The function calls mutt_expando_format() to do the replacement
  * which calls our callback function cb_format_str(). e.g.
  *
  * Template command:
@@ -398,21 +392,19 @@ static void expand_command_str(const struct Context *ctx, const char *cmd, char 
   if (!ctx || !cmd || !buf)
     return;
 
-  mutt_FormatString(buf, buflen, 0, buflen, cmd, cb_format_str, (unsigned long) ctx, 0);
+  mutt_expando_format(buf, buflen, 0, buflen, cmd, cb_format_str, (unsigned long) ctx, 0);
 }
 
 /**
  * execute_command - Run a system command
- * @ctx:         Mailbox to work with
- * @command:     Command string to execute
- * @progress:    Message to show the user
+ * @param ctx         Mailbox to work with
+ * @param command     Command string to execute
+ * @param progress    Message to show the user
+ * @retval 1 Success
+ * @retval 0 Failure
  *
  * Run the supplied command, taking care of all the Mutt requirements,
  * such as locking files and blocking signals.
- *
- * Returns:
- *      1: Success
- *      0: Failure
  */
 static int execute_command(struct Context *ctx, const char *command, const char *progress)
 {
@@ -445,7 +437,7 @@ static int execute_command(struct Context *ctx, const char *command, const char 
 
 /**
  * comp_open_mailbox - Open a compressed mailbox
- * @ctx: Mailbox to open
+ * @param ctx Mailbox to open
  *
  * Set up a compressed mailbox to be read.
  * Decompress the mailbox and set up the paths and hooks needed.
@@ -506,15 +498,13 @@ or_fail:
 
 /**
  * comp_open_append_mailbox - Open a compressed mailbox for appending
- * @ctx:   Mailbox to open
- * @flags: e.g. Does the file already exist?
+ * @param ctx   Mailbox to open
+ * @param flags e.g. Does the file already exist?
+ * @retval  0 Success
+ * @retval -1 Failure
  *
  * To append to a compressed mailbox we need an append-hook (or both open- and
  * close-hooks).
- *
- * Returns:
- *       0: Success
- *      -1: Failure
  */
 static int comp_open_append_mailbox(struct Context *ctx, int flags)
 {
@@ -589,14 +579,12 @@ oa_fail1:
 
 /**
  * comp_close_mailbox - Close a compressed mailbox
- * @ctx: Mailbox to close
+ * @param ctx Mailbox to close
+ * @retval  0 Success
+ * @retval -1 Failure
  *
  * If the mailbox has been changed then re-compress the tmp file.
  * Then delete the tmp file.
- *
- * Returns:
- *       0: Success
- *      -1: Failure
  */
 static int comp_close_mailbox(struct Context *ctx)
 {
@@ -665,7 +653,11 @@ static int comp_close_mailbox(struct Context *ctx)
 
 /**
  * comp_check_mailbox - Check for changes in the compressed file
- * @ctx: Mailbox
+ * @param ctx        Mailbox
+ * @param index_hint Currently selected mailbox
+ * @retval 0              Mailbox OK
+ * @retval #MUTT_REOPENED The mailbox was closed and reopened
+ * @retval -1             Mailbox bad
  *
  * If the compressed file changes in size but the mailbox hasn't been changed
  * in Mutt, then we can close and reopen the mailbox.
@@ -673,11 +665,6 @@ static int comp_close_mailbox(struct Context *ctx)
  * If the mailbox has been changed in Mutt, warn the user.
  *
  * The return codes are picked to match mx_check_mailbox().
- *
- * Returns:
- *      0:              Mailbox OK
- *      MUTT_REOPENED:  The mailbox was closed and reopened
- *      -1:             Mailbox bad
  */
 static int comp_check_mailbox(struct Context *ctx, int *index_hint)
 {
@@ -795,16 +782,14 @@ static int comp_open_new_message(struct Message *msg, struct Context *ctx, struc
 
 /**
  * mutt_comp_can_append - Can we append to this path?
- * @path: pathname of file to be tested
+ * @param ctx Mailbox
+ * @retval true  Yes, we can append to the file
+ * @retval false No, appending isn't possible
  *
  * To append to a file we can either use an 'append-hook' or a combination of
  * 'open-hook' and 'close-hook'.
  *
  * A match means it's our responsibility to append to the file.
- *
- * Returns:
- *      true: Yes, we can append to the file
- *      false: No, appending isn't possible
  */
 bool mutt_comp_can_append(struct Context *ctx)
 {
@@ -827,15 +812,13 @@ bool mutt_comp_can_append(struct Context *ctx)
 
 /**
  * mutt_comp_can_read - Can we read from this file?
- * @path: Pathname of file to be tested
+ * @param path Pathname of file to be tested
+ * @retval true  Yes, we can read the file
+ * @retval false No, we cannot read the file
  *
  * Search for an 'open-hook' with a regex that matches the path.
  *
  * A match means it's our responsibility to open the file.
- *
- * Returns:
- *      true: Yes, we can read the file
- *      false: No, we cannot read the file
  */
 bool mutt_comp_can_read(const char *path)
 {
@@ -850,14 +833,13 @@ bool mutt_comp_can_read(const char *path)
 
 /**
  * comp_sync_mailbox - Save changes to the compressed mailbox file
- * @ctx: Mailbox to sync
+ * @param ctx        Mailbox to sync
+ * @param index_hint Currently selected mailbox
+ * @retval  0 Success
+ * @retval -1 Failure
  *
  * Changes in Mutt only affect the tmp file.  Calling comp_sync_mailbox()
  * will commit them to the compressed file.
- *
- * Returns:
- *       0: Success
- *      -1: Failure
  */
 static int comp_sync_mailbox(struct Context *ctx, int *index_hint)
 {
@@ -909,14 +891,12 @@ sync_cleanup:
 
 /**
  * mutt_comp_valid_command - Is this command string allowed?
- * @cmd:  Command string
+ * @param cmd  Command string
+ * @retval 1 Valid command
+ * @retval 0 "%f" and/or "%t" is missing
  *
  * A valid command string must have both "%f" (from file) and "%t" (to file).
  * We don't check if we can actually run the command.
- *
- * Returns:
- *      1: Valid command
- *      0: "%f" and/or "%t" is missing
  */
 int mutt_comp_valid_command(const char *cmd)
 {

@@ -1,6 +1,11 @@
 /**
+ * @file
+ * GUI present the user with a selectable list
+ *
+ * @authors
  * Copyright (C) 1996-2000,2002,2012 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -281,7 +286,7 @@ static void menu_pad_string(struct Menu *menu, char *s, size_t n)
   int shift = option(OPTARROWCURSOR) ? 3 : 0;
   int cols = menu->indexwin->cols - shift;
 
-  mutt_format_string(s, n, cols, cols, FMT_LEFT, ' ', scratch, mutt_strlen(scratch), 1);
+  mutt_simple_format(s, n, cols, cols, FMT_LEFT, ' ', scratch, mutt_strlen(scratch), 1);
   s[n - 1] = 0;
   FREE(&scratch);
 }
@@ -577,11 +582,13 @@ void menu_prev_line(struct Menu *menu)
     mutt_error(_("You cannot scroll up farther."));
 }
 
-/*
- * pageup:   jumplen == -pagelen
- * pagedown: jumplen == pagelen
- * halfup:   jumplen == -pagelen/2
- * halfdown: jumplen == pagelen/2
+/**
+ * menu_length_jump - Calculate the destination of a jump
+ *
+ * * pageup:   jumplen == -pagelen
+ * * pagedown: jumplen == pagelen
+ * * halfup:   jumplen == -pagelen/2
+ * * halfdown: jumplen == pagelen/2
  */
 #define DIRECTION ((neg * 2) + 1)
 static void menu_length_jump(struct Menu *menu, int jumplen)
@@ -914,7 +921,7 @@ void mutt_current_menu_redraw()
 static int menu_search(struct Menu *menu, int op)
 {
   int r = 0, wrap = 0;
-  int searchDir;
+  int search_dir;
   regex_t re;
   char buf[SHORT_STRING];
   char *searchBuf =
@@ -934,12 +941,13 @@ static int menu_search(struct Menu *menu, int op)
       mutt_str_replace(&SearchBuffers[menu->menu], buf);
       searchBuf = SearchBuffers[menu->menu];
     }
-    menu->searchDir = (op == OP_SEARCH || op == OP_SEARCH_NEXT) ? MUTT_SEARCH_DOWN : MUTT_SEARCH_UP;
+    menu->search_dir =
+        (op == OP_SEARCH || op == OP_SEARCH_NEXT) ? MUTT_SEARCH_DOWN : MUTT_SEARCH_UP;
   }
 
-  searchDir = (menu->searchDir == MUTT_SEARCH_UP) ? -1 : 1;
+  search_dir = (menu->search_dir == MUTT_SEARCH_UP) ? -1 : 1;
   if (op == OP_SEARCH_OPPOSITE)
-    searchDir = -searchDir;
+    search_dir = -search_dir;
 
   if (searchBuf)
     r = REGCOMP(&re, searchBuf, REG_NOSUB | mutt_which_case(searchBuf));
@@ -951,7 +959,7 @@ static int menu_search(struct Menu *menu, int op)
     return -1;
   }
 
-  r = menu->current + searchDir;
+  r = menu->current + search_dir;
 search_next:
   if (wrap)
     mutt_message(_("Search wrapped to top."));
@@ -963,12 +971,12 @@ search_next:
       return r;
     }
 
-    r += searchDir;
+    r += search_dir;
   }
 
   if (option(OPTWRAPSEARCH) && wrap++ == 0)
   {
-    r = searchDir == 1 ? 0 : menu->max - 1;
+    r = search_dir == 1 ? 0 : menu->max - 1;
     goto search_next;
   }
   regfree(&re);

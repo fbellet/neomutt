@@ -1,6 +1,11 @@
 /**
+ * @file
+ * GUI manage the main index (list of emails)
+ *
+ * @authors
  * Copyright (C) 1996-2000,2002,2010,2012-2013 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -134,7 +139,7 @@ static const char *No_visible = N_("No visible messages.");
 
 #define CURHDR Context->hdrs[Context->v2r[menu->current]]
 #define UNREAD(h) mutt_thread_contains_unread(Context, h)
-#define FLAGGED(h) mutt_thread_contains_flagged (Context, h)
+#define FLAGGED(h) mutt_thread_contains_flagged(Context, h)
 
 #define CAN_COLLAPSE(header)                                                   \
   ((option(OPTCOLLAPSEUNREAD) || !UNREAD(header)) &&                           \
@@ -150,9 +155,9 @@ static char *fsl = "\007";
  * @param toggle toggle collapsed state
  *
  * This function is called by the OP_MAIN_COLLAPSE_ALL command and on folder
- * enter if the OPTCOLLAPSEALL option is set. In the first case, the @toggle
+ * enter if the OPTCOLLAPSEALL option is set. In the first case, the @a toggle
  * parameter is 1 to actually toggle collapsed/uncollapsed state on all
- * threads. In the second case, the @toggle parameter is 0, actually turning
+ * threads. In the second case, the @a toggle parameter is 0, actually turning
  * this function into a one-way collapse.
  */
 static void collapse_all(struct Menu *menu, int toggle)
@@ -229,7 +234,10 @@ static int ci_previous_undeleted(int msgno)
   return -1;
 }
 
-/* Return the index of the first new message, or failing that, the first
+/**
+ * ci_first_message - Get index of first new message
+ *
+ * Return the index of the first new message, or failing that, the first
  * unread message.
  */
 static int ci_first_message(void)
@@ -265,7 +273,11 @@ static int ci_first_message(void)
   return 0;
 }
 
-/* This should be in mx.c, but it only gets used here. */
+/**
+ * mx_toggle_write - Toggle the mailbox's readonly flag
+ *
+ * This should be in mx.c, but it only gets used here.
+ */
 static int mx_toggle_write(struct Context *ctx)
 {
   if (!ctx)
@@ -514,7 +526,11 @@ static int main_change_folder(struct Menu *menu, int op, char *buf, size_t bufsz
 }
 
 
-/* terminal status capability check. terminfo must have been initialized. */
+/**
+ * mutt_ts_capability - Check terminal capabilities
+ *
+ * terminal status capability check. terminfo must have been initialized.
+ */
 bool mutt_ts_capability(void)
 {
   char *term = getenv("TERM");
@@ -533,11 +549,11 @@ bool mutt_ts_capability(void)
   if (tcaps && tcaps != (char *) -1 && *tcaps)
   {
     /* update the static defns of tsl/fsl from terminfo */
-    tsl = safe_strdup(tcaps);
+    tsl = tcaps;
 
     tcaps = tigetstr("fsl");
     if (tcaps && tcaps != (char *) -1 && *tcaps)
-      fsl = safe_strdup(tcaps);
+      fsl = tcaps;
 
     return true;
   }
@@ -590,7 +606,7 @@ void index_make_entry(char *s, size_t l, struct Menu *menu, int num)
   if (!h)
     return;
 
-  format_flag flag = MUTT_FORMAT_MAKEPRINT | MUTT_FORMAT_ARROWCURSOR | MUTT_FORMAT_INDEX;
+  enum FormatFlag flag = MUTT_FORMAT_MAKEPRINT | MUTT_FORMAT_ARROWCURSOR | MUTT_FORMAT_INDEX;
   int edgemsgno, reverse = Sort & SORT_REVERSE;
   struct MuttThread *tmp = NULL;
 
@@ -668,8 +684,9 @@ int index_color(int index_no)
 
 /**
  * mutt_draw_statusline - Draw a highlighted status bar
- * @cols:  Maximum number of screen columns
- * @buf:   Message to be displayed
+ * @param cols   Maximum number of screen columns
+ * @param buf    Message to be displayed
+ * @param buflen Length of the buffer
  *
  * Users configure the highlighting of the status bar, e.g.
  *     color status red default "[0-9][0-9]:[0-9][0-9]"
@@ -879,7 +896,10 @@ static void index_menu_redraw(struct Menu *menu)
   menu->redraw = 0;
 }
 
-/* This function handles the message index window as well as commands returned
+/**
+ * mutt_index_menu - Display a list of emails
+ *
+ * This function handles the message index window as well as commands returned
  * from the pager (MENU_PAGER).
  */
 int mutt_index_menu(void)

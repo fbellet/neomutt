@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Routines for querying and external address book
+ *
+ * @authors
  * Copyright (C) 1996-2000,2003,2013 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -41,6 +46,9 @@
 #include "protos.h"
 #include "rfc822.h"
 
+/**
+ * struct Query - An entry from an external address-book
+ */
 struct Query
 {
   int num;
@@ -50,6 +58,9 @@ struct Query
   struct Query *next;
 };
 
+/**
+ * struct Entry - An entry in a selectable list of Query's
+ */
 struct Entry
 {
   bool tagged;
@@ -192,7 +203,7 @@ static int query_search(struct Menu *m, regex_t *re, int n)
 static const char *query_format_str(char *dest, size_t destlen, size_t col, int cols,
                                     char op, const char *src, const char *fmt,
                                     const char *ifstring, const char *elsestring,
-                                    unsigned long data, format_flag flags)
+                                    unsigned long data, enum FormatFlag flags)
 {
   struct Entry *entry = (struct Entry *) data;
   struct Query *query = entry->data;
@@ -235,9 +246,9 @@ static const char *query_format_str(char *dest, size_t destlen, size_t col, int 
   }
 
   if (optional)
-    mutt_FormatString(dest, destlen, col, cols, ifstring, query_format_str, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, ifstring, query_format_str, data, 0);
   else if (flags & MUTT_FORMAT_OPTIONAL)
-    mutt_FormatString(dest, destlen, col, cols, elsestring, query_format_str, data, 0);
+    mutt_expando_format(dest, destlen, col, cols, elsestring, query_format_str, data, 0);
 
   return src;
 }
@@ -247,7 +258,7 @@ static void query_entry(char *s, size_t slen, struct Menu *m, int num)
   struct Entry *entry = &((struct Entry *) m->data)[num];
 
   entry->data->num = num;
-  mutt_FormatString(s, slen, 0, MuttIndexWindow->cols, NONULL(QueryFormat),
+  mutt_expando_format(s, slen, 0, MuttIndexWindow->cols, NONULL(QueryFormat),
                     query_format_str, (unsigned long) entry, MUTT_FORMAT_ARROWCURSOR);
 }
 
@@ -488,6 +499,7 @@ static void query_menu(char *buf, size_t buflen, struct Query *results, int retb
     mutt_menu_destroy(&menu);
   }
 }
+
 int mutt_query_complete(char *buf, size_t buflen)
 {
   struct Query *results = NULL;

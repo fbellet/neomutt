@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Some miscellaneous functions
+ *
+ * @authors
  * Copyright (C) 1996-2000,2007,2010,2013 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1999-2008 Thomas Roessler <roessler@does-not-exist.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -71,12 +76,12 @@
 #endif
 
 static const char *xdg_env_vars[] = {
-      [kXDGConfigHome] = "XDG_CONFIG_HOME",
-      [kXDGConfigDirs] = "XDG_CONFIG_DIRS",
+      [XDG_CONFIG_HOME] = "XDG_CONFIG_HOME",
+      [XDG_CONFIG_DIRS] = "XDG_CONFIG_DIRS",
 };
 
 static const char *xdg_defaults[] = {
-      [kXDGConfigHome] = "~/.config", [kXDGConfigDirs] = "/etc/xdg",
+      [XDG_CONFIG_HOME] = "~/.config", [XDG_CONFIG_DIRS] = "/etc/xdg",
 };
 
 struct Body *mutt_new_body(void)
@@ -89,11 +94,12 @@ struct Body *mutt_new_body(void)
 }
 
 
-/* Modified by blong to accept a "suggestion" for file name.  If
- * that file exists, then construct one with unique name but
- * keep any extension.  This might fail, I guess.
- * Renamed to mutt_adv_mktemp so I only have to change where it's
- * called, and not all possible cases.
+/**
+ * mutt_adv_mktemp - Advanced mktemp(3)
+ *
+ * Modified by blong to accept a "suggestion" for file name.  If that file
+ * exists, then construct one with unique name but keep any extension.  This
+ * might fail, I guess.
  */
 void mutt_adv_mktemp(char *s, size_t l)
 {
@@ -122,7 +128,9 @@ void mutt_adv_mktemp(char *s, size_t l)
   }
 }
 
-/* create a send-mode duplicate from a receive-mode body */
+/**
+ * mutt_copy_body - create a send-mode duplicate from a receive-mode body
+ */
 int mutt_copy_body(FILE *fp, struct Body **tgt, struct Body *src)
 {
   if (!tgt || !src)
@@ -417,7 +425,10 @@ void mutt_free_header(struct Header **h)
   FREE(h);
 }
 
-/* returns true if the header contained in "s" is in list "t" */
+/**
+ * mutt_matches_list - Is the string in the list
+ * @retval true if the header contained in "s" is in list "t"
+ */
 bool mutt_matches_list(const char *s, struct List *t)
 {
   for (; t; t = t->next)
@@ -428,7 +439,11 @@ bool mutt_matches_list(const char *s, struct List *t)
   return false;
 }
 
-/* checks Ignore and UnIgnore using mutt_matches_list */
+/**
+ * mutt_matches_ignore - Does the string match the ignore list
+ *
+ * checks Ignore and UnIgnore using mutt_matches_list
+ */
 int mutt_matches_ignore(const char *s)
 {
   return mutt_matches_list(s, Ignore) && !mutt_matches_list(s, UnIgnore);
@@ -611,12 +626,13 @@ char *_mutt_expand_path(char *s, size_t slen, int rx)
   return s;
 }
 
-/* Extract the real name from /etc/passwd's GECOS field.
- * When set, honor the regular expression in GecosMask,
- * otherwise assume that the GECOS field is a
+/**
+ * mutt_gecos_name - Lookup a user's real name in /etc/passwd
+ *
+ * Extract the real name from /etc/passwd's GECOS field.  When set, honor the
+ * regular expression in GecosMask, otherwise assume that the GECOS field is a
  * comma-separated list.
- * Replace "&" by a capitalized version of the user's login
- * name.
+ * Replace "&" by a capitalized version of the user's login name.
  */
 char *mutt_gecos_name(char *dest, size_t destlen, struct passwd *pw)
 {
@@ -708,7 +724,12 @@ void mutt_delete_parameter(const char *attribute, struct Parameter **p)
   }
 }
 
-/* returns 1 if Mutt can't display this type of data, 0 otherwise */
+/**
+ * mutt_needs_mailcap - Does this type need a mailcap entry do display
+ * @param m Attachment body to be displayed
+ * @retval true  Mutt requires a mailcap entry to display
+ * @retval false otherwise
+ */
 bool mutt_needs_mailcap(struct Body *m)
 {
   switch (m->type)
@@ -795,7 +816,11 @@ void mutt_free_envelope(struct Envelope **p)
   FREE(p);
 }
 
-/* move all the headers from extra not present in base into base */
+/**
+ * mutt_merge_envelopes - Merge the headers of two emails
+ *
+ * Move all the headers from extra not present in base into base
+ */
 void mutt_merge_envelopes(struct Envelope *base, struct Envelope **extra)
 {
 /* copies each existing element if necessary, and sets the element
@@ -948,12 +973,16 @@ void mutt_free_alias(struct Alias **p)
   }
 }
 
-/* collapse the pathname using ~ or = when possible */
+/**
+ * mutt_pretty_mailbox - Shorten a mailbox path using '~' or '='
+ *
+ * Collapse the pathname using ~ or = when possible
+ */
 void mutt_pretty_mailbox(char *s, size_t buflen)
 {
   char *p = s, *q = s;
   size_t len;
-  url_scheme_t scheme;
+  enum UrlScheme scheme;
   char tmp[PATH_MAX];
 
   scheme = url_check_scheme(s);
@@ -1097,7 +1126,12 @@ void mutt_expand_fmt(char *dest, size_t destlen, const char *fmt, const char *sr
   }
 }
 
-/* return 0 on success, -1 on abort, 1 on error */
+/**
+ * mutt_check_overwrite - Ask the user if overwriting is necessary
+ * @retval  0 on success
+ * @retval -1 on abort
+ * @retval  1 on error
+ */
 int mutt_check_overwrite(const char *attname, const char *path, char *fname,
                          size_t flen, int *append, char **directory)
 {
@@ -1116,8 +1150,8 @@ int mutt_check_overwrite(const char *attname, const char *path, char *fname,
     {
       switch (mutt_multi_choice
               /* L10N:
-         Means "The path you specified as the destination file is a directory."
-         See the msgid "Save to file: " (alias.c, recvattach.c) */
+                 Means "The path you specified as the destination file is a directory."
+                 See the msgid "Save to file: " (alias.c, recvattach.c) */
               (_("File is a directory, save under it? [(y)es, (n)o, (a)ll]"), _("yna")))
       {
         case 3: /* all */
@@ -1197,8 +1231,12 @@ void mutt_safe_path(char *s, size_t l, struct Address *a)
       *p = '_';
 }
 
-/* Note this function uses a fixed size buffer of LONG_STRING and so
- * should only be used for visual modifications, such as disp_subj. */
+/**
+ * mutt_apply_replace - Apply replacements to a buffer
+ *
+ * Note this function uses a fixed size buffer of LONG_STRING and so
+ * should only be used for visual modifications, such as disp_subj.
+ */
 char *mutt_apply_replace(char *dbuf, size_t dlen, char *sbuf, struct ReplaceList *rlist)
 {
   struct ReplaceList *l = NULL;
@@ -1291,14 +1329,20 @@ char *mutt_apply_replace(char *dbuf, size_t dlen, char *sbuf, struct ReplaceList
 }
 
 
-void mutt_FormatString(char *dest,     /* output buffer */
-                       size_t destlen, /* output buffer len */
-                       size_t col, /* starting column (nonzero when called recursively) */
-                       int cols,           /* maximum columns */
-                       const char *src,    /* template string */
-                       format_t *callback, /* callback for processing */
-                       unsigned long data, /* callback data */
-                       format_flag flags)  /* callback flags */
+/**
+ * mutt_expando_format - Expand expandos (%x) in a string
+ * @param dest     output buffer
+ * @param destlen  output buffer len
+ * @param col      starting column (nonzero when called recursively)
+ * @param cols     maximum columns
+ * @param src      template string
+ * @param callback callback for processing
+ * @param data     callback data
+ * @param flags    callback flags
+ */
+void mutt_expando_format(char *dest, size_t destlen, size_t col, int cols,
+                         const char *src, format_t *callback,
+                         unsigned long data, enum FormatFlag flags)
 {
   char prefix[SHORT_STRING], buf[LONG_STRING], *cp = NULL, *wptr = dest, ch;
   char ifstring[SHORT_STRING], elsestring[SHORT_STRING];
@@ -1364,7 +1408,7 @@ void mutt_FormatString(char *dest,     /* output buffer */
         mutt_extract_token(word, srcbuf, 0);
         mutt_debug(3, "fmtpipe %2d: %s\n", i++, word->data);
         mutt_buffer_addch(command, '\'');
-        mutt_FormatString(buf, sizeof(buf), 0, cols, word->data, callback, data,
+        mutt_expando_format(buf, sizeof(buf), 0, cols, word->data, callback, data,
                           flags | MUTT_FORMAT_NOFILTER);
         for (p = buf; p && *p; p++)
         {
@@ -1404,7 +1448,7 @@ void mutt_FormatString(char *dest,     /* output buffer */
 
           /* If the result ends with '%', this indicates that the filter
            * generated %-tokens that mutt can expand.  Eliminate the '%'
-           * marker and recycle the string through mutt_FormatString().
+           * marker and recycle the string through mutt_expando_format().
            * To literally end with "%", use "%%". */
           if ((n > 0) && dest[n - 1] == '%')
           {
@@ -1420,7 +1464,7 @@ void mutt_FormatString(char *dest,     /* output buffer */
                  * it back for the recursive call since the expansion of
                  * format pipes does not try to append a nul itself.
                  */
-                mutt_FormatString(dest, destlen + 1, col, cols, recycler,
+                mutt_expando_format(dest, destlen + 1, col, cols, recycler,
                                   callback, data, flags);
                 FREE(&recycler);
               }
@@ -1623,7 +1667,7 @@ void mutt_FormatString(char *dest,     /* output buffer */
           int pad;
 
           /* get contents after padding */
-          mutt_FormatString(buf, sizeof(buf), 0, cols, src + pl, callback, data, flags);
+          mutt_expando_format(buf, sizeof(buf), 0, cols, src + pl, callback, data, flags);
           len = mutt_strlen(buf);
           wid = mutt_strwidth(buf);
 
@@ -1801,9 +1845,13 @@ void mutt_FormatString(char *dest,     /* output buffer */
   *wptr = 0;
 }
 
-/* This function allows the user to specify a command to read stdout from in
-   place of a normal file.  If the last character in the string is a pipe (|),
-   then we assume it is a command to run instead of a normal file. */
+/**
+ * mutt_open_read - Run a command to read from
+ *
+ * This function allows the user to specify a command to read stdout from in
+ * place of a normal file.  If the last character in the string is a pipe (|),
+ * then we assume it is a command to run instead of a normal file.
+ */
 FILE *mutt_open_read(const char *path, pid_t *thepid)
 {
   FILE *f = NULL;
@@ -1837,7 +1885,12 @@ FILE *mutt_open_read(const char *path, pid_t *thepid)
   return f;
 }
 
-/* returns 0 if OK to proceed, -1 to abort, 1 to retry */
+/**
+ * mutt_save_confirm - Ask the user to save
+ * @retval  0 if OK to proceed
+ * @retval -1 to abort
+ * @retval  1 to retry
+ */
 int mutt_save_confirm(const char *s, struct stat *st)
 {
   char tmp[_POSIX_PATH_MAX];
@@ -2009,7 +2062,9 @@ void mutt_sleep(short s)
     sleep(s);
 }
 
-/* Decrease a file's modification time by 1 second */
+/**
+ * mutt_decrease_mtime - Decrease a file's modification time by 1 second
+ */
 time_t mutt_decrease_mtime(const char *f, struct stat *st)
 {
   struct utimbuf utim;
@@ -2034,7 +2089,9 @@ time_t mutt_decrease_mtime(const char *f, struct stat *st)
   return mtime;
 }
 
-/* sets mtime of 'to' to mtime of 'from' */
+/**
+ * mutt_set_mtime - sets mtime of 'to' to mtime of 'from'
+ */
 void mutt_set_mtime(const char *from, const char *to)
 {
   struct utimbuf utim;
@@ -2048,8 +2105,12 @@ void mutt_set_mtime(const char *from, const char *to)
   }
 }
 
-/* set atime to current time, just as read() would do on !noatime.
- * Silently ignored if unsupported. */
+/**
+ * mutt_touch_atime - set atime to current time
+ *
+ * This is just as read() would do on !noatime.
+ * Silently ignored if unsupported.
+ */
 void mutt_touch_atime(int f)
 {
 #ifdef HAVE_FUTIMENS
@@ -2132,13 +2193,20 @@ bool mutt_match_rx_list(const char *s, struct RxList *l)
   return false;
 }
 
-/* Match a string against the patterns defined by the 'spam' command and output
+/**
+ * mutt_match_spam_list - Does a string match a spam pattern
+ * @param s        String to check
+ * @param l        List of spam patterns
+ * @param text     Buffer to save match
+ * @param textsize Buffer length
+ * @retval true if \a s matches a pattern in \a l
+ * @retval false otherwise
+ *
+ * Match a string against the patterns defined by the 'spam' command and output
  * the expanded format into `text` when there is a match.  If textsize<=0, the
  * match is performed but the format is not expanded and no assumptions are made
  * about the value of `text` so it may be NULL.
- *
- * Returns true if the argument `s` matches a pattern in the spam list, otherwise
- * false. */
+ */
 bool mutt_match_spam_list(const char *s, struct ReplaceList *l, char *text, int textsize)
 {
   static regmatch_t *pmatch = NULL;
@@ -2220,12 +2288,16 @@ void mutt_encode_path(char *dest, size_t dlen, const char *src)
   FREE(&p);
 }
 
-/*
- * Process an XDG environment variable or its fallback.
+/**
+ * mutt_set_xdg_path - Find an XDG path or its fallback
+ * @param type    Type of XDG variable, e.g. #XDG_CONFIG_HOME
+ * @param buf     Buffer to save path
+ * @param bufsize Buffer length
+ * @retval 1 if an entry was found that actually exists on disk and 0 otherwise
  *
- * Return 1 if an entry was found that actually exists on disk and 0 otherwise.
+ * Process an XDG environment variable or its fallback.
  */
-int mutt_set_xdg_path(const XDGType type, char *buf, size_t bufsize)
+int mutt_set_xdg_path(enum XdgType type, char *buf, size_t bufsize)
 {
   char *xdg_env = getenv(xdg_env_vars[type]);
   char *xdg = (xdg_env && *xdg_env) ? safe_strdup(xdg_env) :

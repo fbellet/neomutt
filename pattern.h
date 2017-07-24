@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Match patterns to emails
+ *
+ * @authors
  * Copyright (C) 2017 Richard Russon <rich@flatcap.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -16,7 +21,7 @@
  */
 
 #ifndef _MUTT_PATTERN_H
-#define _MUTT_PATTERN_H 1
+#define _MUTT_PATTERN_H
 
 #include <regex.h>
 #include <stdbool.h>
@@ -28,6 +33,9 @@ struct Buffer;
 struct Header;
 struct Context;
 
+/**
+ * struct Pattern - A simple (non-regex) pattern
+ */
 struct Pattern
 {
   short op;
@@ -35,12 +43,12 @@ struct Pattern
   bool alladdr : 1;
   bool stringmatch : 1;
   bool groupmatch : 1;
-  bool ign_case : 1; /* ignore case for local stringmatch searches */
+  bool ign_case : 1; /**< ignore case for local stringmatch searches */
   bool isalias : 1;
   int min;
   int max;
   struct Pattern *next;
-  struct Pattern *child; /* arguments to logical op */
+  struct Pattern *child; /**< arguments to logical op */
   union {
     regex_t *rx;
     struct Group *g;
@@ -48,25 +56,32 @@ struct Pattern
   } p;
 };
 
-typedef enum {
+/**
+ * enum PatternExecFlag - Flags for mutt_pattern_exec()
+ */
+enum PatternExecFlag
+{
   MUTT_MATCH_FULL_ADDRESS = 1
-} pattern_exec_flag;
+};
 
-/* This is used when a message is repeatedly pattern matched against.
+/**
+ * struct PatternCache - Cache commonly-used patterns
+ *
+ * This is used when a message is repeatedly pattern matched against.
  * e.g. for color, scoring, hooks.  It caches a few of the potentially slow
  * operations.
  * Each entry has a value of 0 = unset, 1 = false, 2 = true
  */
 struct PatternCache
 {
-  int list_all;       /* ^~l */
-  int list_one;       /*  ~l */
-  int sub_all;        /* ^~u */
-  int sub_one;        /*  ~u */
-  int pers_recip_all; /* ^~p */
-  int pers_recip_one; /*  ~p */
-  int pers_from_all;  /* ^~P */
-  int pers_from_one;  /*  ~P */
+  int list_all;       /**< ^~l */
+  int list_one;       /**<  ~l */
+  int sub_all;        /**< ^~u */
+  int sub_one;        /**<  ~u */
+  int pers_recip_all; /**< ^~p */
+  int pers_recip_one; /**<  ~p */
+  int pers_from_all;  /**< ^~P */
+  int pers_from_one;  /**<  ~P */
 };
 
 static inline struct Pattern *new_pattern(void)
@@ -74,7 +89,7 @@ static inline struct Pattern *new_pattern(void)
   return safe_calloc(1, sizeof(struct Pattern));
 }
 
-int mutt_pattern_exec(struct Pattern *pat, pattern_exec_flag flags,
+int mutt_pattern_exec(struct Pattern *pat, enum PatternExecFlag flags,
                       struct Context *ctx, struct Header *h, struct PatternCache *cache);
 struct Pattern *mutt_pattern_comp(/* const */ char *s, int flags, struct Buffer *err);
 void mutt_check_simple(char *s, size_t len, const char *simple);

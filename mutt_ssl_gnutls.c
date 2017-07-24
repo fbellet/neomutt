@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Handling of GnuTLS encryption
+ *
+ * @authors
  * Copyright (C) 2001 Marco d'Itri <md@linux.it>
  * Copyright (C) 2001-2004 Andrew McDonald <andrew@mcdonald.org.uk>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -79,7 +84,9 @@ typedef gnutls_transport_ptr gnutls_transport_ptr_t;
 typedef gnutls_x509_crt gnutls_x509_crt_t;
 #endif
 
-
+/**
+ * struct TlsSockData - TLS socket data
+ */
 typedef struct TlsSockData
 {
   gnutls_session_t state;
@@ -199,7 +206,11 @@ static int tls_starttls_close(struct Connection *conn)
   return rc;
 }
 
-/* sanity-checking wrapper for gnutls_certificate_verify_peers */
+/**
+ * tls_verify_peers - wrapper for gnutls_certificate_verify_peers
+ *
+ * wrapper with sanity-checking
+ */
 static gnutls_certificate_status_t tls_verify_peers(gnutls_session_t tlsstate)
 {
   int verify_ret;
@@ -308,7 +319,9 @@ static int tls_check_stored_hostname(const gnutls_datum_t *cert, const char *hos
   return 0;
 }
 
-/* this bit is based on read_ca_file() in gnutls */
+/**
+ * tls_compare_certificates - Compare certificates
+ */
 static int tls_compare_certificates(const gnutls_datum_t *peercert)
 {
   gnutls_datum_t cert;
@@ -508,8 +521,15 @@ static char *tls_make_date(time_t t, char *s, size_t len)
   return s;
 }
 
-/*
- * Returns 0 on failure, nonzero on success.
+/**
+ * tls_check_one_certificate - Check a GnuTLS certificate
+ * @param certdata List of GnuTLS certificates
+ * @param certstat GnuTLS certificate status
+ * @param hostname Hostname
+ * @param idx      Index into certificate list
+ * @param len      Length of certificate list
+ * @retval 0  on failure
+ * @retval >0 on success
  */
 static int tls_check_one_certificate(const gnutls_datum_t *certdata,
                                      gnutls_certificate_status_t certstat,
@@ -708,11 +728,23 @@ static int tls_check_one_certificate(const gnutls_datum_t *certdata,
       !(certerr & (CERTERR_EXPIRED | CERTERR_NOTYETVALID | CERTERR_REVOKED)))
   {
     menu->prompt = _("(r)eject, accept (o)nce, (a)ccept always");
+    /* L10N:
+   * These three letters correspond to the choices in the string:
+   * (r)eject, accept (o)nce, (a)ccept always.
+   * This is an interactive certificate confirmation prompt for
+   * a GNUTLS connection.
+   */
     menu->keys = _("roa");
   }
   else
   {
     menu->prompt = _("(r)eject, accept (o)nce");
+    /* L10N:
+   * These two letters correspond to the choices in the string:
+   * (r)eject, accept (o)nce.
+   * These is an interactive certificate confirmation prompt for
+   * a GNUTLS connection.
+   */
     menu->keys = _("ro");
   }
 
@@ -1015,8 +1047,12 @@ static int tls_set_priority(tlssockdata *data)
 }
 #endif
 
-/* tls_negotiate: After TLS state has been initialized, attempt to negotiate
- *   TLS over the wire, including certificate checks. */
+/**
+ * tls_negotiate - Negotiate TLS connection
+ *
+ * After TLS state has been initialized, attempt to negotiate TLS over the
+ * wire, including certificate checks.
+ */
 static int tls_negotiate(struct Connection *conn)
 {
   tlssockdata *data = NULL;

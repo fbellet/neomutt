@@ -1,8 +1,13 @@
 /**
+ * @file
+ * PGP sign, encrypt, check routines
+ *
+ * @authors
  * Copyright (C) 1996-1997 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1999-2003 Thomas Roessler <roessler@does-not-exist.org>
  * Copyright (C) 2004 g10 Code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -54,7 +59,6 @@ void pgp_extract_keys_from_attachment_list(FILE *fp, int tag, struct Body *top);
 void pgp_void_passphrase(void);
 int pgp_valid_passphrase(void);
 
-/* private ? */
 int pgp_verify_one(struct Body *sigbdy, struct State *s, const char *tempfile);
 struct Body *pgp_traditional_encryptsign(struct Body *a, int flags, char *keylist);
 struct Body *pgp_encrypt_message(struct Body *a, char *keylist, int sign);

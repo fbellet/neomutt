@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Assorted sorting methods
+ *
+ * @authors
  * Copyright (C) 1996-2000 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -16,7 +21,7 @@
  */
 
 #ifndef _MUTT_SORT_H
-#define _MUTT_SORT_H 1
+#define _MUTT_SORT_H
 
 #include "mapping.h"
 #include "where.h"
@@ -24,14 +29,14 @@
 struct Address;
 struct Context;
 
-#define SORT_DATE     1 /* the date the mail was sent. */
+#define SORT_DATE     1 /**< the date the mail was sent. */
 #define SORT_SIZE     2
 #define SORT_SUBJECT  3
-#define SORT_ALPHA    3 /* makedoc.c requires this */
+#define SORT_ALPHA    3 /**< makedoc.c requires this */
 #define SORT_FROM     4
-#define SORT_ORDER    5 /* the order the messages appear in the mailbox. */
+#define SORT_ORDER    5 /**< the order the messages appear in the mailbox. */
 #define SORT_THREADS  6
-#define SORT_RECEIVED 7 /* when the message were delivered locally */
+#define SORT_RECEIVED 7 /**< when the message were delivered locally */
 #define SORT_TO       8
 #define SORT_SCORE    9
 #define SORT_ALIAS    10

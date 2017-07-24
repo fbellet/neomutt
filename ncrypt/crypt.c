@@ -1,4 +1,8 @@
 /**
+ * @file
+ * Signing/encryption multiplexor
+ *
+ * @authors
  * Copyright (C) 1996-1997 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1999-2000,2002-2004,2006 Thomas Roessler <roessler@does-not-exist.org>
  * Copyright (C) 2001 Thomas Roessler <roessler@does-not-exist.org>
@@ -6,6 +10,7 @@
  * Copyright (C) 2003 Werner Koch <wk@gnupg.org>
  * Copyright (C) 2004 g10code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -48,7 +53,11 @@
 #include "rfc822.h"
 #include "state.h"
 
-/* print the current time to avoid spoofing of the signature output */
+/**
+ * crypt_current_time - Print the current time
+ *
+ * print the current time to avoid spoofing of the signature output
+ */
 void crypt_current_time(struct State *s, char *app_name)
 {
   time_t t;
@@ -69,6 +78,9 @@ void crypt_current_time(struct State *s, char *app_name)
   state_attach_puts(tmp, s);
 }
 
+/**
+ * crypt_forget_passphrase - Forget a passphrase and display a message
+ */
 void crypt_forget_passphrase(void)
 {
   if ((WithCrypto & APPLICATION_PGP))
@@ -98,6 +110,9 @@ static void disable_coredumps(void)
 
 #endif
 
+/**
+ * crypt_valid_passphrase - Check that we have a usable passphrase, ask if not
+ */
 int crypt_valid_passphrase(int flags)
 {
   int ret = 0;
@@ -346,13 +361,17 @@ int mutt_is_valid_multipart_pgp_encrypted(struct Body *b)
   return PGPENCRYPT;
 }
 
-/*
+/**
+ * mutt_is_malformed_multipart_pgp_encrypted - Check for malformed layout
+ *
  * This checks for the malformed layout caused by MS Exchange in
  * some cases:
+ * ```
  *  <multipart/mixed>
  *     <text/plain>
  *     <application/pgp-encrypted> [BASE64-encoded]
  *     <application/octet-stream> [BASE64-encoded]
+ * ```
  * See ticket #3742
  */
 int mutt_is_malformed_multipart_pgp_encrypted(struct Body *b)
@@ -500,6 +519,11 @@ int mutt_is_application_smime(struct Body *m)
   return 0;
 }
 
+/**
+ * crypt_query - Check out the type of encryption used
+ *
+ * Set the cached status values if there are any.
+ */
 int crypt_query(struct Body *m)
 {
   int t = 0;
@@ -564,6 +588,11 @@ int crypt_query(struct Body *m)
   return t;
 }
 
+/**
+ * crypt_write_signed - Write the message body/part
+ *
+ * Body/part A described by state S to the given TEMPFILE.
+ */
 int crypt_write_signed(struct Body *a, struct State *s, const char *tempfile)
 {
   FILE *fp = NULL;
@@ -761,6 +790,15 @@ void crypt_extract_keys_from_messages(struct Header *h)
     unset_option(OPTDONTHANDLEPGPKEYS);
 }
 
+/**
+ * crypt_get_keys - Check we have all the keys we need
+ *
+ * Do a quick check to make sure that we can find all of the
+ * encryption keys if the user has requested this service.
+ * Return the list of keys in KEYLIST.
+ * If oppenc_mode is true, only keys that can be determined without
+ * prompting will be used.
+ */
 int crypt_get_keys(struct Header *msg, char **keylist, int oppenc_mode)
 {
   struct Address *adrlist = NULL, *last = NULL;
@@ -825,7 +863,9 @@ int crypt_get_keys(struct Header *msg, char **keylist, int oppenc_mode)
   return 0;
 }
 
-/*
+/**
+ * crypt_opportunistic_encrypt - Can all recipients be determined
+ *
  * Check if all recipients keys can be automatically determined.
  * Enable encryption if they can, otherwise disable encryption.
  */
@@ -870,8 +910,8 @@ static void crypt_fetch_signatures(struct Body ***signatures, struct Body *a, in
   }
 }
 
-/*
- * This routine verifies a  "multipart/signed"  body.
+/**
+ * mutt_signed_handler - Verify a "multipart/signed" body.
  */
 int mutt_signed_handler(struct Body *a, struct State *s)
 {
@@ -992,8 +1032,20 @@ int mutt_signed_handler(struct Body *a, struct State *s)
   return rc;
 }
 
-/* Obtain pointers to fingerprint or short or long key ID, if any.
- * See ncrypt.h for details.
+/**
+ * crypt_get_fingerprint_or_id - Get the fingerprint or long key ID
+ * @param pphint  Start of string to be passed to pgp_add_string_to_hints() or
+ *                crypt_add_string_to_hints()
+ * @param ppl     Start of long key ID if detected, else NULL
+ * @param pps     Start of short key ID if detected, else NULL
+ * @retval  string Copy of fingerprint, if any, stripped of all spaces
+ *                 Must be FREE'd by caller
+ * @retval  NULL   Otherwise
+ *
+ * Obtain pointers to fingerprint or short or long key ID, if any.
+ *
+ * Upon return, at most one of return, *ppl and *pps pointers is non-NULL,
+ * indicating the longest fingerprint or ID found, if any.
  */
 const char *crypt_get_fingerprint_or_id(char *p, const char **pphint,
                                         const char **ppl, const char **pps)
@@ -1073,9 +1125,10 @@ const char *crypt_get_fingerprint_or_id(char *p, const char **pphint,
   return pfcopy;
 }
 
-/*
- * Used by pgp_find_keys and find_keys to check if a crypt-hook
- * value is a key id.
+/**
+ * crypt_is_numerical_keyid - Is this a numerical keyid
+ *
+ * Check if a crypt-hook value is a key id.
  */
 bool crypt_is_numerical_keyid(const char *s)
 {

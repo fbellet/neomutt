@@ -1,6 +1,11 @@
 /**
+ * @file
+ * POP authentication
+ *
+ * @authors
  * Copyright (C) 2000-2001 Vsevolod Volkov <vvv@mutt.org.ua>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -36,8 +41,10 @@
 #endif
 
 #ifdef USE_SASL
-/* SASL authenticator */
-static pop_auth_res_t pop_auth_sasl(struct PopData *pop_data, const char *method)
+/**
+ * pop_auth_sasl - POP SASL authenticator
+ */
+static enum PopAuthRes pop_auth_sasl(struct PopData *pop_data, const char *method)
 {
   sasl_conn_t *saslconn = NULL;
   sasl_interact_t *interaction = NULL;
@@ -186,7 +193,9 @@ bail:
 }
 #endif
 
-/* Get the server timestamp for APOP authentication */
+/**
+ * pop_apop_timestamp - Get the server timestamp for APOP authentication
+ */
 void pop_apop_timestamp(struct PopData *pop_data, char *buf)
 {
   char *p1 = NULL, *p2 = NULL;
@@ -200,8 +209,10 @@ void pop_apop_timestamp(struct PopData *pop_data, char *buf)
   }
 }
 
-/* APOP authenticator */
-static pop_auth_res_t pop_auth_apop(struct PopData *pop_data, const char *method)
+/**
+ * pop_auth_apop - APOP authenticator
+ */
+static enum PopAuthRes pop_auth_apop(struct PopData *pop_data, const char *method)
 {
   struct Md5Ctx ctx;
   unsigned char digest[16];
@@ -247,8 +258,10 @@ static pop_auth_res_t pop_auth_apop(struct PopData *pop_data, const char *method
   return POP_A_FAILURE;
 }
 
-/* USER authenticator */
-static pop_auth_res_t pop_auth_user(struct PopData *pop_data, const char *method)
+/**
+ * pop_auth_user - USER authenticator
+ */
+static enum PopAuthRes pop_auth_user(struct PopData *pop_data, const char *method)
 {
   char buf[LONG_STRING];
   int ret;
@@ -314,13 +327,13 @@ static const struct PopAuth pop_authenticators[] = {
   { NULL, NULL },
 };
 
-/*
- * Authentication
- *  0 - successful,
- * -1 - connection lost,
- * -2 - login failed,
- * -3 - authentication canceled.
-*/
+/**
+ * pop_authenticate - Authenticate with a POP server
+ * @retval  0 Successful
+ * @retval -1 Connection lost
+ * @retval -2 Login failed
+ * @retval -3 Authentication cancelled
+ */
 int pop_authenticate(struct PopData *pop_data)
 {
   struct Account *acct = &pop_data->conn->account;

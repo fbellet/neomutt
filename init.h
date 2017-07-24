@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Definitions of user variables, sort methods and commands
+ *
+ * @authors
  * Copyright (C) 1996-2002,2007,2010,2012-2013,2016 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2004 g10 Code GmbH
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -17,7 +22,7 @@
  */
 
 #ifndef _MUTT_INIT_H
-#define _MUTT_INIT_H 1
+#define _MUTT_INIT_H
 
 #ifdef _MAKEDOC
 #include "config.h"
@@ -45,22 +50,22 @@ struct Buffer;
 
 #ifndef _MAKEDOC
 /* flags to parse_set() */
-#define MUTT_SET_INV   (1 << 0) /* default is to invert all vars */
-#define MUTT_SET_UNSET (1 << 1) /* default is to unset all vars */
-#define MUTT_SET_RESET (1 << 2) /* default is to reset all vars to default */
+#define MUTT_SET_INV   (1 << 0) /**< default is to invert all vars */
+#define MUTT_SET_UNSET (1 << 1) /**< default is to unset all vars */
+#define MUTT_SET_RESET (1 << 2) /**< default is to reset all vars to default */
 
 /* forced redraw/resort types + other flags */
 #define R_NONE        0
-#define R_INDEX       (1 << 0) /* redraw the index menu (MENU_MAIN) */
-#define R_PAGER       (1 << 1) /* redraw the pager menu */
-#define R_PAGER_FLOW  (1 << 2) /* reflow lineInfo and redraw the pager menu */
-#define R_RESORT      (1 << 3) /* resort the mailbox */
-#define R_RESORT_SUB  (1 << 4) /* resort subthreads */
-#define R_RESORT_INIT (1 << 5) /* resort from scratch */
-#define R_TREE        (1 << 6) /* redraw the thread tree */
-#define R_REFLOW      (1 << 7) /* reflow window layout and full redraw */
-#define R_SIDEBAR     (1 << 8) /* redraw the sidebar */
-#define R_MENU        (1 << 9) /* redraw all menus */
+#define R_INDEX       (1 << 0) /**< redraw the index menu (MENU_MAIN) */
+#define R_PAGER       (1 << 1) /**< redraw the pager menu */
+#define R_PAGER_FLOW  (1 << 2) /**< reflow line_info and redraw the pager menu */
+#define R_RESORT      (1 << 3) /**< resort the mailbox */
+#define R_RESORT_SUB  (1 << 4) /**< resort subthreads */
+#define R_RESORT_INIT (1 << 5) /**< resort from scratch */
+#define R_TREE        (1 << 6) /**< redraw the thread tree */
+#define R_REFLOW      (1 << 7) /**< reflow window layout and full redraw */
+#define R_SIDEBAR     (1 << 8) /**< redraw the sidebar */
+#define R_MENU        (1 << 9) /**< redraw all menus */
 #define R_BOTH        (R_INDEX | R_PAGER)
 #define R_RESORT_BOTH (R_RESORT | R_RESORT_SUB)
 
@@ -774,9 +779,9 @@ struct Option MuttVars[] = {
   ** along with the body of your message.
   ** .pp
   ** Although the compose menu may have localized header labels, the
-  ** labels passed to your editor will be standard RFC 2822 headers,
+  ** labels passed to your editor will be standard RFC2822 headers,
   ** (e.g. To:, Cc:, Subject:).  Headers added in your editor must
-  ** also be RFC 2822 headers, or one of the pseudo headers listed in
+  ** also be RFC2822 headers, or one of the pseudo headers listed in
   ** ``$edit-header''.  Mutt will not understand localized header
   ** labels, just as it would not when parsing an actual email.
   ** .pp
@@ -1285,7 +1290,7 @@ struct Option MuttVars[] = {
   /*
   ** .pp
   ** When \fIset\fP, Mutt will encode international domain names using
-  ** IDN.  Unset this if your SMTP server can handle newer (RFC 6531)
+  ** IDN.  Unset this if your SMTP server can handle newer (RFC6531)
   ** UTF-8 encoded domains. (IDN only)
   */
 #endif /* HAVE_LIBIDN */
@@ -1543,7 +1548,7 @@ struct Option MuttVars[] = {
   ** .dt %r .dd comma separated list of ``To:'' recipients
   ** .dt %R .dd comma separated list of ``Cc:'' recipients
   ** .dt %s .dd subject of the message
-  ** .dt %S .dd status of the message (``N''/``D''/``d''/``!''/``r''/\(as)
+  ** .dt %S .dd single character status of the message (``N''/``O''/``D''/``d''/``!''/``r''/``\(as'')
   ** .dt %t .dd ``To:'' field (recipients)
   ** .dt %T .dd the appropriate character from the $$to_chars string
   ** .dt %u .dd user (login) name of the author
@@ -1556,7 +1561,11 @@ struct Option MuttVars[] = {
   ** .dt %Y .dd ``X-Label:'' field, if present, and \fI(1)\fP not at part of a thread tree,
   **            \fI(2)\fP at the top of a thread, or \fI(3)\fP ``X-Label:'' is different from
   **            preceding message's ``X-Label:''.
-  ** .dt %Z .dd Combined message flags
+  ** .dt %Z .dd a three character set of message status flags.
+  **            the first character is new/read/replied flags (``n''/``o''/``r''/``O''/``N'').
+  **            the second is deleted or encryption flags (``D''/``d''/``S''/``P''/``s''/``K'').
+  **            the third is either tagged/flagged (``\(as''/``!''), or one of the characters
+  **            listed in $$to_chars.
   ** .dt %zs .dd message status flags
   ** .dt %zc .dd message crypto flags
   ** .dt %zt .dd message tag flags

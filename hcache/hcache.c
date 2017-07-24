@@ -1,9 +1,14 @@
 /**
+ * @file
+ * Header cache multiplexor
+ *
+ * @authors
  * Copyright (C) 2004 Thomas Glanzmann <sithglan@stud.uni-erlangen.de>
  * Copyright (C) 2004 Tobias Werth <sitowert@stud.uni-erlangen.de>
  * Copyright (C) 2004 Brian Fundakowski Feldman <green@FreeBSD.org>
  * Copyright (C) 2016 Pietro Cerutti <gahr@gahr.ch>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -56,7 +61,7 @@
 static unsigned int hcachever = 0x0;
 
 /**
- * header_cache_t - header cache structure.
+ * struct HeaderCache - header cache structure
  *
  * This struct holds both the backend-agnostic and the backend-specific parts
  * of the header cache. Backend code MUST initialize the fetch, store,
@@ -70,18 +75,21 @@ struct HeaderCache
   void *ctx;
 };
 
-typedef union {
+/**
+ * union Validate - Header cache validity
+ */
+union Validate {
   struct timeval timeval;
   unsigned int uidvalidity;
-} validate;
+};
 
-#define HCACHE_BACKEND(name) extern const hcache_ops_t hcache_##name##_ops;
+#define HCACHE_BACKEND(name) extern const struct HcacheOps hcache_##name##_ops;
 HCACHE_BACKEND_LIST
 #undef HCACHE_BACKEND
 
 /* Keep this list sorted as it is in configure.ac to avoid user surprise if no
  * header_cache_backend is specified. */
-const hcache_ops_t *hcache_ops[] = {
+const struct HcacheOps *hcache_ops[] = {
 #ifdef HAVE_TC
   &hcache_tokyocabinet_ops,
 #endif
@@ -103,9 +111,9 @@ const hcache_ops_t *hcache_ops[] = {
   NULL,
 };
 
-static const hcache_ops_t *hcache_get_backend_ops(const char *backend)
+static const struct HcacheOps *hcache_get_backend_ops(const char *backend)
 {
-  const hcache_ops_t **ops = hcache_ops;
+  const struct HcacheOps **ops = hcache_ops;
 
   if (!backend || !*backend)
   {
@@ -513,7 +521,7 @@ static void restore_envelope(struct Envelope *e, const unsigned char *d, int *of
 
 static int crc_matches(const char *d, unsigned int crc)
 {
-  int off = sizeof(validate);
+  int off = sizeof(union Validate);
   unsigned int mycrc = 0;
 
   if (!d)
@@ -526,8 +534,7 @@ static int crc_matches(const char *d, unsigned int crc)
 
 /**
  * create_hcache_dir - Create parent dirs for the hcache database
- * @path: Database filename
- *
+ * @param path Database filename
  * @retval true Success
  * @retval false Failure (errno set)
  */
@@ -557,25 +564,24 @@ static bool create_hcache_dir(const char *path)
  * @param path   Base directory, from $header_cache
  * @param folder Mailbox name (including protocol)
  * @param namer  Callback to generate database filename
- *
- * @return Full pathname to the database (to be generated)
- *         (path must be freed by the caller)
+ * @retval ptr Full pathname to the database (to be generated)
+ *             (path must be freed by the caller)
  *
  * Generate the pathname for the hcache database, it will be of the form:
  *     BASE/FOLDER/NAME-SUFFIX
  *
- * BASE :  Base directory (@path)
- * FOLDER: Mailbox name (@folder)
- * NAME:   Create by @namer, or md5sum of @folder
- * SUFFIX: Character set (if ICONV isn't being used)
+ * * BASE:  Base directory (@a path)
+ * * FOLDER: Mailbox name (@a folder)
+ * * NAME:   Create by @a namer, or md5sum of @a folder
+ * * SUFFIX: Character set (if ICONV isn't being used)
  *
  * This function will create any parent directories needed, so the caller just
  * needs to create the database file.
  *
- * If @path exists and is a directory, it is used.
- * If @path has a trailing '/' it is assumed to be a directory.
+ * If @a path exists and is a directory, it is used.
+ * If @a path has a trailing '/' it is assumed to be a directory.
  * If ICONV isn't being used, then a suffix is added to the path, e.g. '-utf-8'.
- * Otherise @path is assumed to be a file.
+ * Otherise @a path is assumed to be a file.
  */
 static const char *hcache_per_folder(const char *path, const char *folder, hcache_namer_t namer)
 {
@@ -608,8 +614,9 @@ static const char *hcache_per_folder(const char *path, const char *folder, hcach
   else
   {
     unsigned char m[16]; /* binary md5sum */
-    char name[33];
-    md5_buffer(folder, strlen(folder), &m);
+    char name[_POSIX_PATH_MAX];
+    snprintf(name, sizeof(name), "%s|%s", hcache_get_ops()->name, folder);
+    md5_buffer(name, strlen(name), &m);
     snprintf(name, sizeof(name),
              "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
              m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10],
@@ -625,7 +632,10 @@ static const char *hcache_per_folder(const char *path, const char *folder, hcach
   return hcpath;
 }
 
-/* This function transforms a header into a char so that it is useable by
+/**
+ * hcache_dump - Serialise a Header object
+ *
+ * This function transforms a header into a char so that it is useable by
  * db_store.
  */
 static void *hcache_dump(header_cache_t *h, struct Header *header, int *off,
@@ -636,7 +646,7 @@ static void *hcache_dump(header_cache_t *h, struct Header *header, int *off,
   int convert = !Charset_is_utf8;
 
   *off = 0;
-  d = lazy_malloc(sizeof(validate));
+  d = lazy_malloc(sizeof(union Validate));
 
   if (uidvalidity == 0)
   {
@@ -646,7 +656,7 @@ static void *hcache_dump(header_cache_t *h, struct Header *header, int *off,
   }
   else
     memcpy(d, &uidvalidity, sizeof(uidvalidity));
-  *off += sizeof(validate);
+  *off += sizeof(union Validate);
 
   d = dump_int(h->crc, d, off);
 
@@ -693,7 +703,7 @@ struct Header *mutt_hcache_restore(const unsigned char *d)
   int convert = !Charset_is_utf8;
 
   /* skip validate */
-  off += sizeof(validate);
+  off += sizeof(union Validate);
 
   /* skip crc */
   off += sizeof(unsigned int);
@@ -730,7 +740,7 @@ static char *get_foldername(const char *folder)
 
 header_cache_t *mutt_hcache_open(const char *path, const char *folder, hcache_namer_t namer)
 {
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
   if (!ops)
     return NULL;
 
@@ -805,7 +815,7 @@ header_cache_t *mutt_hcache_open(const char *path, const char *folder, hcache_na
 
 void mutt_hcache_close(header_cache_t *h)
 {
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
   if (!h || !ops)
     return;
 
@@ -836,7 +846,7 @@ void *mutt_hcache_fetch(header_cache_t *h, const char *key, size_t keylen)
 void *mutt_hcache_fetch_raw(header_cache_t *h, const char *key, size_t keylen)
 {
   char path[_POSIX_PATH_MAX];
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
 
   if (!h || !ops)
     return NULL;
@@ -848,7 +858,7 @@ void *mutt_hcache_fetch_raw(header_cache_t *h, const char *key, size_t keylen)
 
 void mutt_hcache_free(header_cache_t *h, void **data)
 {
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
 
   if (!h || !ops)
     return;
@@ -878,7 +888,7 @@ int mutt_hcache_store_raw(header_cache_t *h, const char *key, size_t keylen,
                           void *data, size_t dlen)
 {
   char path[_POSIX_PATH_MAX];
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
 
   if (!h || !ops)
     return -1;
@@ -891,7 +901,7 @@ int mutt_hcache_store_raw(header_cache_t *h, const char *key, size_t keylen,
 int mutt_hcache_delete(header_cache_t *h, const char *key, size_t keylen)
 {
   char path[_POSIX_PATH_MAX];
-  const hcache_ops_t *ops = hcache_get_ops();
+  const struct HcacheOps *ops = hcache_get_ops();
 
   if (!h)
     return -1;
@@ -904,7 +914,7 @@ int mutt_hcache_delete(header_cache_t *h, const char *key, size_t keylen)
 const char *mutt_hcache_backend_list(void)
 {
   char tmp[STRING] = { 0 };
-  const hcache_ops_t **ops = hcache_ops;
+  const struct HcacheOps **ops = hcache_ops;
   size_t len = 0;
 
   for (; *ops; ++ops)

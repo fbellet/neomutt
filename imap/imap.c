@@ -1,8 +1,13 @@
 /**
+ * @file
+ * IMAP network mailbox
+ *
+ * @authors
  * Copyright (C) 1996-1998,2012 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 1996-1999 Brandon Long <blong@fiction.net>
  * Copyright (C) 1999-2009,2012 Brendan Cully <brendan@kublai.com>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -68,10 +73,12 @@ static int imap_check_capabilities(struct ImapData *idata);
 static void imap_set_flag(struct ImapData *idata, int aclbit, int flag,
                           const char *str, char *flags, size_t flsize);
 
-/* imap_access: Check permissions on an IMAP mailbox.
- * TODO: ACL checks. Right now we assume if it exists we can
- *       mess with it. */
-int imap_access(const char *path, int flags)
+/**
+ * imap_access - Check permissions on an IMAP mailbox
+ *
+ * TODO: ACL checks. Right now we assume if it exists we can mess with it.
+ */
+int imap_access(const char *path)
 {
   struct ImapData *idata = NULL;
   struct ImapMbox mx;
@@ -188,8 +195,11 @@ int imap_delete_mailbox(struct Context *ctx, struct ImapMbox *mx)
   return 0;
 }
 
-/* imap_logout_all: close all open connections. Quick and dirty until we can
- *   make sure we've got all the context we need. */
+/**
+ * imap_logout_all - close all open connections
+ *
+ * Quick and dirty until we can make sure we've got all the context we need.
+ */
 void imap_logout_all(void)
 {
   struct Connection *conn = NULL;
@@ -213,9 +223,12 @@ void imap_logout_all(void)
   }
 }
 
-/* imap_read_literal: read bytes bytes from server into file. Not explicitly
- *   buffered, relies on FILE buffering. NOTE: strips \r from \r\n.
- *   Apparently even literals use \r\n-terminated strings ?! */
+/**
+ * imap_read_literal - Read bytes bytes from server into file
+ *
+ * Not explicitly buffered, relies on FILE buffering. NOTE: strips `\r` from
+ * `\r\n`.  Apparently even literals use `\r\n`-terminated strings ?!
+ */
 int imap_read_literal(FILE *fp, struct ImapData *idata, long bytes, struct Progress *pbar)
 {
   char c;
@@ -257,9 +270,13 @@ int imap_read_literal(FILE *fp, struct ImapData *idata, long bytes, struct Progr
   return 0;
 }
 
-/* imap_expunge_mailbox: Purge IMAP portion of expunged messages from the
- *   context. Must not be done while something has a handle on any headers
- *   (eg inside pager or editor). That is, check IMAP_REOPEN_ALLOW. */
+/**
+ * imap_expunge_mailbox - Purge messages from the server
+ *
+ * Purge IMAP portion of expunged messages from the context. Must not be done
+ * while something has a handle on any headers (eg inside pager or editor).
+ * That is, check IMAP_REOPEN_ALLOW.
+ */
 void imap_expunge_mailbox(struct ImapData *idata)
 {
   struct Header *h = NULL;
@@ -318,7 +335,9 @@ void imap_expunge_mailbox(struct ImapData *idata)
   mutt_sort_headers(idata->ctx, 1);
 }
 
-/* imap_check_capabilities: make sure we can log in to this server. */
+/**
+ * imap_check_capabilities - Make sure we can log in to this server
+ */
 static int imap_check_capabilities(struct ImapData *idata)
 {
   if (imap_exec(idata, "CAPABILITY", 0) != 0)
@@ -340,8 +359,12 @@ static int imap_check_capabilities(struct ImapData *idata)
   return 0;
 }
 
-/* imap_conn_find: Find an open IMAP connection matching account, or open
- *   a new one if none can be found. */
+/**
+ * imap_conn_find - Find an open IMAP connection
+ *
+ * Find an open IMAP connection matching account, or open a new one if none can
+ * be found.
+ */
 struct ImapData *imap_conn_find(const struct Account *account, int flags)
 {
   struct Connection *conn = NULL;
@@ -471,7 +494,7 @@ int imap_open_connection(struct ImapData *idata)
           }
           else
           {
-            /* RFC 2595 demands we recheck CAPABILITY after TLS completes. */
+            /* RFC2595 demands we recheck CAPABILITY after TLS completes. */
             if (imap_exec(idata, "CAPABILITY", 0))
               goto bail;
           }
@@ -522,8 +545,11 @@ void imap_close_connection(struct ImapData *idata)
   memset(idata->cmds, 0, sizeof(struct ImapCommand) * idata->cmdslots);
 }
 
-/* imap_get_flags: Make a simple list out of a FLAGS response.
- *   return stream following FLAGS response */
+/**
+ * imap_get_flags - Make a simple list out of a FLAGS response
+ *
+ * return stream following FLAGS response
+ */
 static char *imap_get_flags(struct List **hflags, char *s)
 {
   struct List *flags = NULL;
@@ -619,7 +645,7 @@ static int imap_open_mailbox(struct Context *ctx)
   /* clear mailbox status */
   idata->status = false;
   memset(idata->ctx->rights, 0, sizeof(idata->ctx->rights));
-  idata->newMailCount = 0;
+  idata->new_mail_count = 0;
   idata->max_msn = 0;
 
   mutt_message(_("Selecting %s..."), idata->mailbox);
@@ -713,8 +739,8 @@ static int imap_open_mailbox(struct Context *ctx)
       pc = imap_next_word(pc);
       if (ascii_strncasecmp("EXISTS", pc, 6) == 0)
       {
-        count = idata->newMailCount;
-        idata->newMailCount = 0;
+        count = idata->new_mail_count;
+        idata->new_mail_count = 0;
       }
     }
   } while (rc == IMAP_CMD_CONTINUE);
@@ -820,8 +846,7 @@ static int imap_open_mailbox_append(struct Context *ctx, int flags)
     strfcpy(mailbox, "INBOX", sizeof(mailbox));
   FREE(&mx.mbox);
 
-  /* really we should also check for W_OK */
-  if ((rc = imap_access(ctx->path, F_OK)) == 0)
+  if ((rc = imap_access(ctx->path)) == 0)
     return 0;
 
   if (rc == -1)
@@ -837,7 +862,9 @@ static int imap_open_mailbox_append(struct Context *ctx, int flags)
   return 0;
 }
 
-/* imap_logout: Gracefully log out of server. */
+/**
+ * imap_logout - Gracefully log out of server
+ */
 void imap_logout(struct ImapData **idata)
 {
   /* we set status here to let imap_handle_untagged know we _expect_ to
@@ -865,8 +892,11 @@ static int imap_open_new_message(struct Message *msg, struct Context *dest, stru
   return 0;
 }
 
-/* imap_set_flag: append str to flags if we currently have permission
- *   according to aclbit */
+/**
+ * imap_set_flag - append str to flags if we currently have permission
+ *
+ * according to aclbit
+ */
 static void imap_set_flag(struct ImapData *idata, int aclbit, int flag,
                           const char *str, char *flags, size_t flsize)
 {
@@ -875,8 +905,13 @@ static void imap_set_flag(struct ImapData *idata, int aclbit, int flag,
       safe_strcat(flags, flsize, str);
 }
 
-/* imap_has_flag: do a caseless comparison of the flag against a flag list,
-*   return true if found or flag list has '\*', false otherwise */
+/**
+ * imap_has_flag - Does the flag exist in the list
+ * @retval boolean
+ *
+ * Do a caseless comparison of the flag against a flag list, return true if
+ * found or flag list has '\*'.
+ */
 bool imap_has_flag(struct List *flag_list, const char *flag)
 {
   if (!flag_list)
@@ -897,8 +932,12 @@ bool imap_has_flag(struct List *flag_list, const char *flag)
   return false;
 }
 
-/* Note: headers must be in SORT_ORDER. See imap_exec_msgset for args.
- * Pos is an opaque pointer a la strtok. It should be 0 at first call. */
+/**
+ * imap_make_msg_set - Make a message set
+ *
+ * Note: headers must be in SORT_ORDER. See imap_exec_msgset for args.
+ * Pos is an opaque pointer a la strtok. It should be 0 at first call.
+ */
 static int imap_make_msg_set(struct ImapData *idata, struct Buffer *buf,
                              int flag, bool changed, bool invert, int *pos)
 {
@@ -982,16 +1021,21 @@ static int imap_make_msg_set(struct ImapData *idata, struct Buffer *buf,
   return count;
 }
 
-/* Prepares commands for all messages matching conditions (must be flushed
- * with imap_exec)
- * Params:
- *   idata: ImapData containing context containing header set
- *   pre, post: commands are of the form "%s %s %s %s", tag,
- *     pre, message set, post
- *   flag: enum of flag type on which to filter
- *   changed: include only changed messages in message set
- *   invert: invert sense of flag, eg MUTT_READ matches unread messages
- * Returns: number of matched messages, or -1 on failure */
+/**
+ * imap_exec_msgset - Prepare commands for all messages matching conditions
+ * @param idata   ImapData containing context containing header set
+ * @param pre     prefix commands
+ * @param post    postfix commands
+ * @param flag    flag type on which to filter, e.g. MUTT_REPLIED
+ * @param changed include only changed messages in message set
+ * @param invert  invert sense of flag, eg MUTT_READ matches unread messages
+ * @retval n  Number of matched messages
+ * @retval -1 Failure
+ *
+ * pre/post: commands are of the form "%s %s %s %s", tag, pre, message set, post
+ * Prepares commands for all messages matching conditions
+ * (must be flushed with imap_exec)
+ */
 int imap_exec_msgset(struct ImapData *idata, const char *pre, const char *post,
                      int flag, int changed, int invert)
 {
@@ -1056,7 +1100,10 @@ out:
   return rc;
 }
 
-/* returns 0 if mutt's flags match cached server flags */
+/**
+ * compare_flags - Compare local flags against the server
+ * @retval 0 if mutt's flags match cached server flags
+ */
 static bool compare_flags(struct Header *h)
 {
   struct ImapHeaderData *hd = (struct ImapHeaderData *) h->data;
@@ -1075,7 +1122,9 @@ static bool compare_flags(struct Header *h)
   return false;
 }
 
-/* Update the IMAP server to reflect the flags a single message.  */
+/**
+ * imap_sync_message - Update server to reflect the flags of a single message
+ */
 int imap_sync_message(struct ImapData *idata, struct Header *hdr,
                       struct Buffer *cmd, int *err_continue)
 {
@@ -1176,10 +1225,12 @@ static int sync_helper(struct ImapData *idata, int right, int flag, const char *
   return count;
 }
 
-/* update the IMAP server to reflect message changes done within mutt.
- * Arguments
- *   ctx: the current context
- *   expunge: 0 or 1 - do expunge?
+/**
+ * imap_sync_mailbox - Sync all the changes to the server
+ * @param ctx     the current context
+ * @param expunge 0 or 1 - do expunge?
+ * @retval 0 on success
+ * @retval -1 on error
  */
 int imap_sync_mailbox(struct Context *ctx, int expunge)
 {
@@ -1374,7 +1425,9 @@ out:
   return rc;
 }
 
-/* imap_close_mailbox: clean up IMAP data in Context */
+/**
+ * imap_close_mailbox - Clean up IMAP data in Context
+ */
 int imap_close_mailbox(struct Context *ctx)
 {
   struct ImapData *idata = NULL;
@@ -1435,13 +1488,14 @@ int imap_close_mailbox(struct Context *ctx)
   return 0;
 }
 
-/* use the NOOP or IDLE command to poll for new mail
- *
- * return values:
- *      MUTT_REOPENED   mailbox has been externally modified
- *      MUTT_NEW_MAIL   new mail has arrived!
- *      0               no change
- *      -1              error
+/**
+ * imap_check_mailbox - use the NOOP or IDLE command to poll for new mail
+ * @param ctx   Context
+ * @param force Don't wait
+ * @retval #MUTT_REOPENED  mailbox has been externally modified
+ * @retval #MUTT_NEW_MAIL  new mail has arrived
+ * @retval 0               no change
+ * @retval -1              error
  */
 int imap_check_mailbox(struct Context *ctx, int force)
 {
@@ -1510,7 +1564,9 @@ static int imap_check_mailbox_reopen(struct Context *ctx, int *index_hint)
   return rc;
 }
 
-/* split path into (idata,mailbox name) */
+/**
+ * imap_get_mailbox - split path into (idata,mailbox name)
+ */
 static int imap_get_mailbox(const char *path, struct ImapData **hidata, char *buf, size_t blen)
 {
   struct ImapMbox mx;
@@ -1535,9 +1591,13 @@ static int imap_get_mailbox(const char *path, struct ImapData **hidata, char *bu
   return 0;
 }
 
-/* check for new mail in any subscribed mailboxes. Given a list of mailboxes
- * rather than called once for each so that it can batch the commands and
- * save on round trips. Returns number of mailboxes with new mail. */
+/**
+ * imap_buffy_check - Check for new mail in subscribed folders
+ *
+ * Given a list of mailboxes rather than called once for each so that it can
+ * batch the commands and save on round trips. Returns number of mailboxes with
+ * new mail.
+ */
 int imap_buffy_check(int force, int check_stats)
 {
   struct ImapData *idata = NULL;
@@ -1627,9 +1687,14 @@ int imap_buffy_check(int force, int check_stats)
   return buffies;
 }
 
-/* imap_status: returns count of messages in mailbox, or -1 on error.
+/**
+ * imap_status - Get the status of a mailbox
+ * @retval -1 on error
+ * @retval >=0 count of messages in mailbox
+ *
  * if queue != 0, queue the command and expect it to have been run
- * on the next call (for pipelining the postponed count) */
+ * on the next call (for pipelining the postponed count)
+ */
 int imap_status(char *path, int queue)
 {
   static int queued = 0;
@@ -1642,8 +1707,11 @@ int imap_status(char *path, int queue)
   if (imap_get_mailbox(path, &idata, buf, sizeof(buf)) < 0)
     return -1;
 
-  if (imap_mxcmp(buf, idata->mailbox) == 0)
-    /* We are in the folder we're polling - just return the mailbox count */
+  /* We are in the folder we're polling - just return the mailbox count.
+   *
+   * Note that imap_mxcmp() converts NULL to "INBOX", so we need to
+   * make sure the idata really is open to a folder. */
+  if (idata->ctx && !imap_mxcmp(buf, idata->mailbox))
     return idata->ctx->msgcount;
   else if (mutt_bit_isset(idata->capabilities, IMAP4REV1) ||
            mutt_bit_isset(idata->capabilities, STATUS))
@@ -1673,7 +1741,11 @@ int imap_status(char *path, int queue)
   return 0;
 }
 
-/* return cached mailbox stats or NULL if create is 0 */
+/**
+ * imap_mboxcache_get - Open an hcache for a mailbox
+ *
+ * return cached mailbox stats or NULL if create is 0
+ */
 struct ImapStatus *imap_mboxcache_get(struct ImapData *idata, const char *mbox, int create)
 {
   struct List *cur = NULL;
@@ -1748,8 +1820,12 @@ void imap_mboxcache_free(struct ImapData *idata)
   mutt_free_list(&idata->mboxcache);
 }
 
-/* returns number of patterns in the search that should be done server-side
- * (eg are full-text) */
+/**
+ * do_search - Perform a search of messages
+ *
+ * returns number of patterns in the search that should be done server-side
+ * (eg are full-text)
+ */
 static int do_search(const struct Pattern *search, int allpats)
 {
   int rc = 0;
@@ -1780,9 +1856,13 @@ static int do_search(const struct Pattern *search, int allpats)
   return rc;
 }
 
-/* convert mutt Pattern to IMAP SEARCH command containing only elements
+/**
+ * imap_compile_search - Convert Mutt pattern to IMAP search
+ *
+ * Convert mutt Pattern to IMAP SEARCH command containing only elements
  * that require full-text search (mutt already has what it needs for most
- * match types, and does a better job (eg server doesn't support regexps). */
+ * match types, and does a better job (eg server doesn't support regexps).
+ */
 static int imap_compile_search(struct Context *ctx, const struct Pattern *pat,
                                struct Buffer *buf)
 {
@@ -1963,11 +2043,19 @@ fail:
   return -1;
 }
 
-/* trim dest to the length of the longest prefix it shares with src,
- * returning the length of the trimmed string */
-static int longest_common_prefix(char *dest, const char *src, int start, size_t dlen)
+/**
+ * longest_common_prefix - Find longest prefix common to two strings
+ * @param dest  Destination buffer
+ * @param src   Source buffer
+ * @param start Starting offset into string
+ * @param dlen  Destination buffer length
+ * @retval n Length of the common string
+ *
+ * Trim dest to the length of the longest prefix it shares with src.
+ */
+static size_t longest_common_prefix(char *dest, const char *src, size_t start, size_t dlen)
 {
-  int pos = start;
+  size_t pos = start;
 
   while (pos < dlen && dest[pos] && dest[pos] == src[pos])
     pos++;
@@ -1976,14 +2064,18 @@ static int longest_common_prefix(char *dest, const char *src, int start, size_t 
   return pos;
 }
 
-/* look for IMAP URLs to complete from defined mailboxes. Could be extended
- * to complete over open connections and account/folder hooks too. */
+/**
+ * imap_complete_hosts - Look for completion matches for mailboxes
+ *
+ * look for IMAP URLs to complete from defined mailboxes. Could be extended to
+ * complete over open connections and account/folder hooks too.
+ */
 static int imap_complete_hosts(char *dest, size_t len)
 {
   struct Buffy *mailbox = NULL;
   struct Connection *conn = NULL;
   int rc = -1;
-  int matchlen;
+  size_t matchlen;
 
   matchlen = mutt_strlen(dest);
   for (mailbox = Incoming; mailbox; mailbox = mailbox->next)
@@ -2028,8 +2120,12 @@ static int imap_complete_hosts(char *dest, size_t len)
   return rc;
 }
 
-/* imap_complete: given a partial IMAP folder path, return a string which
- *   adds as much to the path as is unique */
+/**
+ * imap_complete - Try to complete an IMAP folder path
+ *
+ * Given a partial IMAP folder path, return a string which adds as much to the
+ * path as is unique
+ */
 int imap_complete(char *dest, size_t dlen, char *path)
 {
   struct ImapData *idata = NULL;
@@ -2037,7 +2133,8 @@ int imap_complete(char *dest, size_t dlen, char *path)
   char buf[LONG_STRING];
   struct ImapList listresp;
   char completion[LONG_STRING];
-  int clen, matchlen = 0;
+  int clen;
+  size_t matchlen = 0;
   int completions = 0;
   struct ImapMbox mx;
   int rc;
@@ -2116,12 +2213,12 @@ int imap_complete(char *dest, size_t dlen, char *path)
   return -1;
 }
 
-/* imap_fast_trash: use server COPY command to copy deleted
- * messages to the trash folder.
- *   Return codes:
- *      -1: error
- *       0: success
- *       1: non-fatal error - try fetch/append */
+/**
+ * imap_fast_trash - Use server COPY command to copy deleted messages to trash
+ * @retval -1 error
+ * @retval  0 success
+ * @retval  1 non-fatal error - try fetch/append
+ */
 int imap_fast_trash(struct Context *ctx, char *dest)
 {
   struct ImapData *idata = NULL;

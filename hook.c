@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Parse and execute user-defined hooks
+ *
+ * @authors
  * Copyright (C) 1996-2002,2004,2007 Michael R. Elkins <me@mutt.org>, and others
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -42,12 +47,15 @@
 #include "compress.h"
 #endif
 
+/**
+ * struct Hook - A list of user hooks
+ */
 struct Hook
 {
-  int type;                /* hook type */
-  struct Regex rx;         /* regular expression */
-  char *command;           /* filename, command or pattern to execute */
-  struct Pattern *pattern; /* used for fcc,save,send-hook */
+  int type;                /**< hook type */
+  struct Regex rx;         /**< regular expression */
+  char *command;           /**< filename, command or pattern to execute */
+  struct Pattern *pattern; /**< used for fcc,save,send-hook */
   struct Hook *next;
 };
 
@@ -87,10 +95,11 @@ int mutt_parse_hook(struct Buffer *buf, struct Buffer *s, unsigned long data,
     }
   }
 
-  mutt_extract_token(&command, s, (data & (MUTT_FOLDERHOOK | MUTT_SENDHOOK | MUTT_SEND2HOOK |
-                                           MUTT_ACCOUNTHOOK | MUTT_REPLYHOOK)) ?
-                                      MUTT_TOKEN_SPACE :
-                                      0);
+  mutt_extract_token(&command, s,
+                     (data & (MUTT_FOLDERHOOK | MUTT_SENDHOOK | MUTT_SEND2HOOK |
+                              MUTT_ACCOUNTHOOK | MUTT_REPLYHOOK)) ?
+                         MUTT_TOKEN_SPACE :
+                         0);
 
   if (!command.data)
   {
@@ -271,7 +280,12 @@ static void delete_hook(struct Hook *h)
   FREE(&h);
 }
 
-/* Deletes all hooks of type ``type'', or all defined hooks if ``type'' is 0 */
+/**
+ * delete_hooks - Delete matching hooks
+ * @param type
+ * * Hook type to delete, e.g. #MUTT_SENDHOOK
+ * * Or, 0 to delete all hooks
+ */
 static void delete_hooks(int type)
 {
   struct Hook *h = NULL;
@@ -624,7 +638,7 @@ void mutt_timeout_hook(void)
 
 /**
  * mutt_startup_shutdown_hook - Execute any startup/shutdown hooks
- * @type: Hook type: MUTT_STARTUPHOOK or MUTT_SHUTDOWNHOOK
+ * @param type Hook type: MUTT_STARTUPHOOK or MUTT_SHUTDOWNHOOK
  *
  * The user can configure hooks to be run on startup/shutdown.
  * This function finds all the matching hooks and executes them.

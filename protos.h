@@ -1,7 +1,12 @@
 /**
+ * @file
+ * Prototypes for many functions
+ *
+ * @authors
  * Copyright (C) 1996-2000,2007,2010,2013 Michael R. Elkins <me@mutt.org>
  * Copyright (C) 2013 Karel Zak <kzak@redhat.com>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -17,7 +22,7 @@
  */
 
 #ifndef _MUTT_PROTOS_H
-#define _MUTT_PROTOS_H 1
+#define _MUTT_PROTOS_H
 
 #include <stddef.h>
 #include <ctype.h>
@@ -52,8 +57,11 @@ struct passwd;
 
 #define mutt_make_string(A, B, C, D, E) _mutt_make_string(A, B, C, D, E, 0)
 void _mutt_make_string(char *dest, size_t destlen, const char *s, struct Context *ctx,
-                       struct Header *hdr, format_flag flags);
+                       struct Header *hdr, enum FormatFlag flags);
 
+/**
+ * struct HdrFormatInfo - Data passed to hdr_format_str()
+ */
 struct HdrFormatInfo
 {
   struct Context *ctx;
@@ -61,13 +69,17 @@ struct HdrFormatInfo
   const char *pager_progress;
 };
 
-typedef enum {
-  kXDGConfigHome, /* $XDG_CONFIG_HOME */
-  kXDGConfigDirs, /* $XDG_CONFIG_DIRS */
-} XDGType;
+/**
+ * enum XdgType - XDG variable types
+ */
+enum XdgType
+{
+  XDG_CONFIG_HOME,
+  XDG_CONFIG_DIRS,
+};
 
 void mutt_make_string_info(char *dst, size_t dstlen, int cols, const char *s,
-                           struct HdrFormatInfo *hfi, format_flag flags);
+                           struct HdrFormatInfo *hfi, enum FormatFlag flags);
 
 void mutt_free_opts(void);
 
@@ -121,7 +133,7 @@ void mutt_touch_atime(int f);
 const char *mutt_attach_fmt(char *dest, size_t destlen, size_t col, int cols,
                             char op, const char *src, const char *prefix,
                             const char *ifstring, const char *elsestring,
-                            unsigned long data, format_flag flags);
+                            unsigned long data, enum FormatFlag flags);
 
 
 char *mutt_charset_hook(const char *chs);
@@ -136,7 +148,7 @@ struct List *mutt_crypt_hook(struct Address *adr);
 char *mutt_make_date(char *s, size_t len);
 void mutt_timeout_hook(void);
 void mutt_startup_shutdown_hook(int type);
-int mutt_set_xdg_path(const XDGType type, char *buf, size_t bufsize);
+int mutt_set_xdg_path(enum XdgType type, char *buf, size_t bufsize);
 
 const char *mutt_make_version(void);
 
@@ -187,7 +199,7 @@ void mutt_expand_file_fmt(char *dest, size_t destlen, const char *fmt, const cha
 void mutt_expand_fmt(char *dest, size_t destlen, const char *fmt, const char *src);
 void mutt_fix_reply_recipients(struct Envelope *env);
 void mutt_folder_hook(char *path);
-void mutt_format_string(char *dest, size_t destlen, int min_width, int max_width, int justify,
+void mutt_simple_format(char *dest, size_t destlen, int min_width, int max_width, int justify,
                         char m_pad_char, const char *s, size_t n, int arboreal);
 void mutt_format_s(char *dest, size_t destlen, const char *prefix, const char *s);
 void mutt_format_s_tree(char *dest, size_t destlen, const char *prefix, const char *s);

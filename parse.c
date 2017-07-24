@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Miscellaneous email parsing routines
+ *
+ * @authors
  * Copyright (C) 1996-2000,2012-2013 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -48,7 +53,10 @@
 struct Address;
 struct Context;
 
-/* Reads an arbitrarily long header field, and looks ahead for continuation
+/**
+ * mutt_read_rfc822_line - Read a header line from a file
+ *
+ * Reads an arbitrarily long header field, and looks ahead for continuation
  * lines.  ``line'' must point to a dynamically allocated string; it is
  * increased if more space is required to fit the whole line.
  */
@@ -382,9 +390,10 @@ void mutt_parse_content_type(char *s, struct Body *ct)
   if (ct->type == TYPETEXT)
   {
     if (!(pc = mutt_get_parameter("charset", ct->parameter)))
-      mutt_set_parameter("charset", (AssumedCharset && *AssumedCharset) ?
-                                        (const char *) mutt_get_default_charset() :
-                                        "us-ascii",
+      mutt_set_parameter("charset",
+                         (AssumedCharset && *AssumedCharset) ?
+                             (const char *) mutt_get_default_charset() :
+                             "us-ascii",
                          &ct->parameter);
   }
 }
@@ -412,11 +421,10 @@ static void parse_content_disposition(const char *s, struct Body *ct)
   }
 }
 
-/* args:
- *      fp      stream to read from
- *
- *      digest  1 if reading subparts of a multipart/digest, 0
- *              otherwise
+/**
+ * mutt_read_mime_header - Parse a MIME header
+ * @param fp      stream to read from
+ * @param digest  1 if reading subparts of a multipart/digest, 0 otherwise
  */
 struct Body *mutt_read_mime_header(FILE *fp, int digest)
 {
@@ -537,13 +545,10 @@ void mutt_parse_part(FILE *fp, struct Body *b)
   }
 }
 
-/* parse a Message/RFC822 body
- *
- * args:
- *      fp              stream to read from
- *
- *      parent          structure which contains info about the message/rfc822
- *                      body part
+/**
+ * mutt_parse_message_rfc822 - parse a Message/RFC822 body
+ * @param fp     stream to read from
+ * @param parent info about the message/rfc822 body part
  *
  * NOTE: this assumes that `parent->length' has been set!
  */
@@ -569,17 +574,13 @@ struct Body *mutt_parse_message_rfc822(FILE *fp, struct Body *parent)
   return msg;
 }
 
-/* parse a multipart structure
- *
- * args:
- *      fp              stream to read from
- *
- *      boundary        body separator
- *
- *      end_off         length of the multipart body (used when the final
- *                      boundary is missing to avoid reading too far)
- *
- *      digest          1 if reading a multipart/digest, 0 otherwise
+/**
+ * mutt_parse_multipart - parse a multipart structure
+ * @param fp       stream to read from
+ * @param boundary body separator
+ * @param end_off  length of the multipart body (used when the final
+ *                 boundary is missing to avoid reading too far)
+ * @param digest   1 if reading a multipart/digest, 0 otherwise
  */
 struct Body *mutt_parse_multipart(FILE *fp, const char *boundary, LOFF_T end_off, int digest)
 {
@@ -693,12 +694,15 @@ static const char *uncomment_timezone(char *buf, size_t buflen, const char *tz)
   return buf;
 }
 
+/**
+ * struct Tz - Lookup table of Time Zones
+ */
 static const struct Tz
 {
   char tzname[5];
   unsigned char zhours;
   unsigned char zminutes;
-  bool zoccident; /* west of UTC? */
+  bool zoccident; /**< west of UTC? */
 } TimeZones[] = {
   { "aat", 1, 0, true },           /* Atlantic Africa Time */
   { "adt", 4, 0, false },          /* Arabia DST */
@@ -750,7 +754,8 @@ static const struct Tz
   { "wst", 8, 0, false },  /* Western Australia */
 };
 
-/* parses a date string in RFC822 format:
+/**
+ * mutt_parse_date - parses a date string in RFC822 format
  *
  * Date: [ weekday , ] day-of-month month year hour:minute:second timezone
  *
@@ -899,7 +904,10 @@ time_t mutt_parse_date(const char *s, struct Header *h)
   return (mutt_mktime(&tm, 0) + tz_offset);
 }
 
-/* extract the first substring that looks like a message-id.
+/**
+ * mutt_extract_message_id - Find a message-id
+ *
+ * extract the first substring that looks like a message-id.
  * call back with NULL for more (like strtok).
  */
 char *mutt_extract_message_id(const char *s, const char **saveptr)
@@ -1125,7 +1133,7 @@ int mutt_parse_rfc822_line(struct Envelope *e, struct Header *hdr, char *line,
       }
       else if (ascii_strcasecmp(line + 1, "ist-Post") == 0)
       {
-        /* RFC 2369.  FIXME: We should ignore whitespace, but don't. */
+        /* RFC2369.  FIXME: We should ignore whitespace, but don't. */
         if (strncmp(p, "NO", 2) != 0)
         {
           char *beg = NULL, *end = NULL;
@@ -1253,7 +1261,7 @@ int mutt_parse_rfc822_line(struct Envelope *e, struct Header *hdr, char *line,
                 hdr->replied = true;
                 break;
               case 'O':
-                hdr->old = option(OPTMARKOLD) ? true: false;
+                hdr->old = option(OPTMARKOLD) ? true : false;
                 break;
               case 'R':
                 hdr->read = true;
@@ -1366,23 +1374,18 @@ done:
 }
 
 
-/* mutt_read_rfc822_header() -- parses a RFC822 header
+/**
+ * mutt_read_rfc822_header - parses an RFC822 header
+ * @param f         Stream to read from
+ * @param hdr       Header structure of current message (optional)
+ * @param user_hdrs If set, store user headers
+ *                  Used for recall-message and postpone modes
+ * @param weed      If this parameter is set and the user has activated the
+ *                  $weed option, honor the header weed list for user headers.
+ *                  Used for recall-message
+ * @retval ptr Newly allocated envelope structure
  *
- * Args:
- *
- * f            stream to read from
- *
- * hdr          header structure of current message (optional).
- *
- * user_hdrs    If set, store user headers.  Used for recall-message and
- *              postpone modes.
- *
- * weed         If this parameter is set and the user has activated the
- *              $weed option, honor the header weed list for user headers.
- *              Used for recall-message.
- *
- * Returns:     newly allocated envelope structure.  You should free it by
- *              mutt_free_envelope() when envelope stay unneeded.
+ * Caller should free the Envelope using mutt_free_envelope().
  */
 struct Envelope *mutt_read_rfc822_header(FILE *f, struct Header *hdr,
                                          short user_hdrs, short weed)
@@ -1407,7 +1410,7 @@ struct Envelope *mutt_read_rfc822_header(FILE *f, struct Header *hdr,
       hdr->content->encoding = ENC7BIT;
       hdr->content->length = -1;
 
-      /* RFC 2183 says this is arbitrary */
+      /* RFC2183 says this is arbitrary */
       hdr->content->disposition = DISPINLINE;
     }
   }
@@ -1560,7 +1563,9 @@ struct Address *mutt_parse_adrlist(struct Address *p, const char *s)
   return p;
 }
 
-/* Compares mime types to the ok and except lists */
+/**
+ * count_body_parts_check - Compares mime types to the ok and except lists
+ */
 static bool count_body_parts_check(struct List **checklist, struct Body *b, bool dflt)
 {
   struct List *type = NULL;

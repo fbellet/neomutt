@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Generate the help-line and help-page and GUI display them
+ *
+ * @authors
  * Copyright (C) 1996-2000,2009 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -372,7 +377,6 @@ void mutt_help(int menu)
     safe_fclose(&f);
 
     snprintf(buf, sizeof(buf), _("Help for %s"), desc);
-  } while (mutt_do_pager(buf, t, MUTT_PAGER_RETWINCH | MUTT_PAGER_MARKER |
-                                     MUTT_PAGER_NSKIP | MUTT_PAGER_NOWRAP,
+  } while (mutt_do_pager(buf, t, MUTT_PAGER_RETWINCH | MUTT_PAGER_MARKER | MUTT_PAGER_NSKIP | MUTT_PAGER_NOWRAP,
                          NULL) == OP_REFORMAT_WINCH);
 }

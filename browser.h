@@ -1,6 +1,11 @@
 /**
+ * @file
+ * GUI component for displaying/selecting items from a list
+ *
+ * @authors
  * Copyright (C) 1996-2000 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -16,12 +21,15 @@
  */
 
 #ifndef _MUTT_BROWSER_H
-#define _MUTT_BROWSER_H 1
+#define _MUTT_BROWSER_H
 
 #include <stdbool.h>
 #include <sys/types.h>
 #include <time.h>
 
+/**
+ * struct FolderFile - Browser entry representing a folder/dir
+ */
 struct FolderFile
 {
   mode_t mode;
@@ -34,9 +42,9 @@ struct FolderFile
   char *name;
   char *desc;
 
-  bool new;       /* true if mailbox has "new mail" */
-  int msg_count;  /* total number of messages */
-  int msg_unread; /* number of unread messages */
+  bool new;       /**< true if mailbox has "new mail" */
+  int msg_count;  /**< total number of messages */
+  int msg_unread; /**< number of unread messages */
 
 #ifdef USE_IMAP
   char delim;
@@ -49,15 +57,18 @@ struct FolderFile
 #ifdef USE_NNTP
   struct NntpData *nd;
 #endif
-  bool local : 1; /* folder is on local filesystem */
+  bool local : 1; /**< folder is on local filesystem */
   bool tagged : 1;
 };
 
+/**
+ * struct BrowserState - State of the file/mailbox browser
+ */
 struct BrowserState
 {
   struct FolderFile *entry;
-  unsigned int entrylen; /* number of real entries */
-  unsigned int entrymax; /* max entry */
+  unsigned int entrylen; /**< number of real entries */
+  unsigned int entrymax; /**< max entry */
 #ifdef USE_IMAP
   bool imap_browse;
   char *folder;

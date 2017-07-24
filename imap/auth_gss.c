@@ -1,6 +1,11 @@
 /**
+ * @file
+ * IMAP GSS authentication method
+ *
+ * @authors
  * Copyright (C) 1999-2001,2005,2009 Brendan Cully <brendan@kublai.com>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -71,8 +76,10 @@ static void print_gss_error(OM_uint32 err_maj, OM_uint32 err_min)
   mutt_debug(2, "((%s:%d )(%s:%d))\n", buf_maj, err_maj, buf_min, err_min);
 }
 
-/* imap_auth_gss: AUTH=GSSAPI support. */
-imap_auth_res_t imap_auth_gss(struct ImapData *idata, const char *method)
+/**
+ * imap_auth_gss - GSS Authentication support
+ */
+enum ImapAuthRes imap_auth_gss(struct ImapData *idata, const char *method)
 {
   gss_buffer_desc request_buf, send_token;
   gss_buffer_t sec_token;
@@ -277,7 +284,7 @@ imap_auth_res_t imap_auth_gss(struct ImapData *idata, const char *method)
       mutt_debug(1, "Error releasing credentials\n");
 
     /* send_token may contain a notification to the server to flush
-     * credentials. RFC 1731 doesn't specify what to do, and since this
+     * credentials. RFC1731 doesn't specify what to do, and since this
      * support is only for authentication, we'll assume the server knows
      * enough to flush its own credentials */
     gss_release_buffer(&min_stat, &send_token);

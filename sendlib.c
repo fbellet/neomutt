@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Miscellaneous functions for sending an email
+ *
+ * @authors
  * Copyright (C) 1996-2002,2009-2012 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -217,6 +222,9 @@ static void encode_quoted(FGETCONV *fc, FILE *fout, int istext)
   }
 }
 
+/**
+ * struct B64Context - Cursor for the Base64 conversion
+ */
 struct B64Context
 {
   char buffer[3];
@@ -509,6 +517,9 @@ void mutt_generate_boundary(struct Parameter **parm)
   mutt_set_parameter("boundary", rs, parm);
 }
 
+/**
+ * struct ContentState - Info about the body of an email
+ */
 struct ContentState
 {
   int from;
@@ -641,11 +652,20 @@ static void update_content_info(struct Content *info, struct ContentState *s,
 /* Define as 1 if iconv sometimes returns -1(EILSEQ) instead of transcribing. */
 #define BUGGY_ICONV 1
 
-/*
+/**
+ * convert_file_to - Change the encoding of a file
+ * @param[in]  file       File to convert
+ * @param[in]  fromcode   Original encoding
+ * @param[in]  ncodes     Number of target encodings
+ * @param[in]  tocodes    List of target encodings
+ * @param[out] tocode     Chosen encoding
+ * @param[in]  info       Encoding information
+ * @retval -1 Error, no conversion was possible
+ * @retval >0 Success, number of bytes converted
+ *
  * Find the best charset conversion of the file from fromcode into one
  * of the tocodes. If successful, set *tocode and Content *info and
- * return the number of characters converted inexactly. If no
- * conversion was possible, return -1.
+ * return the number of characters converted inexactly.
  *
  * We convert via UTF-8 in order to avoid the condition -1(EINVAL),
  * which would otherwise prevent us from knowing the number of inexact
@@ -782,16 +802,18 @@ static size_t convert_file_to(FILE *file, const char *fromcode, int ncodes,
   return ret;
 }
 
-/*
- * Find the first of the fromcodes that gives a valid conversion and
- * the best charset conversion of the file into one of the tocodes. If
- * successful, set *fromcode and *tocode to dynamically allocated
- * strings, set Content *info, and return the number of characters
- * converted inexactly. If no conversion was possible, return -1.
+/**
+ * convert_file_from_to - Convert a file between encodings
+ *
+ * Find the first of the fromcodes that gives a valid conversion and the best
+ * charset conversion of the file into one of the tocodes. If successful, set
+ * *fromcode and *tocode to dynamically allocated strings, set Content *info,
+ * and return the number of characters converted inexactly. If no conversion
+ * was possible, return -1.
  *
  * Both fromcodes and tocodes may be colon-separated lists of charsets.
- * However, if fromcode is zero then fromcodes is assumed to be the
- * name of a single charset even if it contains a colon.
+ * However, if fromcode is zero then fromcodes is assumed to be the name of a
+ * single charset even if it contains a colon.
  */
 static size_t convert_file_from_to(FILE *file, const char *fromcodes, const char *tocodes,
                                    char **fromcode, char **tocode, struct Content *info)
@@ -861,8 +883,9 @@ static size_t convert_file_from_to(FILE *file, const char *fromcodes, const char
   return ret;
 }
 
-/*
- * Analyze the contents of a file to determine which MIME encoding to use.
+/**
+ * mutt_get_content_info - Analyze file to determine MIME encoding to use
+ *
  * Also set the body charset, sometimes, or not.
  */
 struct Content *mutt_get_content_info(const char *fname, struct Body *b)
@@ -942,8 +965,14 @@ struct Content *mutt_get_content_info(const char *fname, struct Body *b)
   return info;
 }
 
-/* Given a file with path ``s'', see if there is a registered MIME type.
- * returns the major MIME type, and copies the subtype to ``d''.  First look
+/**
+ * mutt_lookup_mime_type - Find the MIME type for an attachment
+ * @param att  Email with attachment
+ * @param path Path to attachment
+ * @retval n MIME type, e.g. #TYPEIMAGE
+ *
+ * Given a file at `path`, see if there is a registered MIME type.
+ * Returns the major MIME type, and copies the subtype to ``d''.  First look
  * for ~/.mime.types, then look in a system mime.types if we can find one.
  * The longest match is used so that we can match `ps.gz' when `gz' also
  * exists.
@@ -1197,7 +1226,9 @@ cleanup:
   a->hdr->content = NULL;
 }
 
-/* determine which Content-Transfer-Encoding to use */
+/**
+ * set_encoding - determine which Content-Transfer-Encoding to use
+ */
 static void set_encoding(struct Body *b, struct Content *info)
 {
   char send_charset[SHORT_STRING];
@@ -1244,7 +1275,9 @@ void mutt_stamp_attachment(struct Body *a)
   a->stamp = time(NULL);
 }
 
-/* Get a body's character set */
+/**
+ * mutt_get_body_charset - Get a body's character set
+ */
 char *mutt_get_body_charset(char *d, size_t dlen, struct Body *b)
 {
   char *p = NULL;
@@ -1264,7 +1297,11 @@ char *mutt_get_body_charset(char *d, size_t dlen, struct Body *b)
 }
 
 
-/* Assumes called from send mode where Body->filename points to actual file */
+/**
+ * mutt_update_encoding - Update the encoding type
+ *
+ * Assumes called from send mode where Body->filename points to actual file
+ */
 void mutt_update_encoding(struct Body *a)
 {
   struct Content *info = NULL;
@@ -1433,7 +1470,10 @@ static int get_toplevel_encoding(struct Body *a)
   return e;
 }
 
-/* check for duplicate boundary. return 1 if duplicate */
+/**
+ * check_boundary - check for duplicate boundary
+ * @retval true if duplicate found
+ */
 static bool check_boundary(const char *boundary, struct Body *b)
 {
   char *p = NULL;
@@ -1470,7 +1510,9 @@ struct Body *mutt_make_multipart(struct Body *b)
   return new;
 }
 
-/* remove the multipart body if it exists */
+/**
+ * mutt_remove_multipart - remove the multipart body if it exists
+ */
 struct Body *mutt_remove_multipart(struct Body *b)
 {
   struct Body *t = NULL;
@@ -1499,8 +1541,12 @@ char *mutt_make_date(char *s, size_t len)
   return s;
 }
 
-/* wrapper around mutt_write_address() so we can handle very large
-   recipient lists without needing a huge temporary buffer in memory */
+/**
+ * mutt_write_address_list - wrapper around mutt_write_address()
+ *
+ * So we can handle very large recipient lists without needing a huge temporary
+ * buffer in memory
+ */
 void mutt_write_address_list(struct Address *adr, FILE *fp, int linelen, int display)
 {
   struct Address *tmp = NULL;
@@ -1545,7 +1591,10 @@ void mutt_write_address_list(struct Address *adr, FILE *fp, int linelen, int dis
 /* arbitrary number of elements to grow the array by */
 #define REF_INC 16
 
-/* need to write the list in reverse because they are stored in reverse order
+/**
+ * mutt_write_references - Add the message refrerences to a list
+ *
+ * need to write the list in reverse because they are stored in reverse order
  * when parsed to speed up threading
  */
 void mutt_write_references(struct List *r, FILE *f, int trim)
@@ -1592,7 +1641,9 @@ static const char *find_word(const char *src)
   return p;
 }
 
-/* like wcwidth(), but gets const char* not wchar_t* */
+/**
+ * my_width - like wcwidth(), but gets const char* not wchar_t*
+ */
 static int my_width(const char *str, int col, int flags)
 {
   wchar_t wc;
@@ -1857,8 +1908,12 @@ static int write_one_header(FILE *fp, int pfxw, int max, int wraplen, const char
   return 0;
 }
 
-/* split several headers into individual ones and call write_one_header
- * for each one */
+/**
+ * mutt_write_one_header - Write one header line to a file
+ *
+ * split several headers into individual ones and call write_one_header
+ * for each one
+ */
 int mutt_write_one_header(FILE *fp, const char *tag, const char *value,
                           const char *pfx, int wraplen, int flags)
 {
@@ -1950,7 +2005,6 @@ out:
  * privacy != 0 => will omit any headers which may identify the user.
  *               Output generated is suitable for being sent through
  *               anonymous remailer chains.
- *
  */
 
 
@@ -2200,14 +2254,16 @@ static void alarm_handler(int sig)
   SigAlrm = 1;
 }
 
-/* invoke sendmail in a subshell
-   path (in)            path to program to execute
-   args (in)            arguments to pass to program
-   msg (in)             temp file containing message to send
-   tempfile (out)       if sendmail is put in the background, this points
-                        to the temporary file containing the stdout of the
-                        child process. If it is NULL, stderr and stdout
-                        are not redirected. */
+/**
+ * send_msg - invoke sendmail in a subshell
+ * @param[in]  path     Path to program to execute
+ * @param[in]  args     Arguments to pass to program
+ * @param[in]  msg      Temp file containing message to send
+ * @param[out] tempfile If sendmail is put in the background, this points
+ *                      to the temporary file containing the stdout of the
+ *                      child process. If it is NULL, stderr and stdout
+ *                      are not redirected.
+ */
 static int send_msg(const char *path, char **args, const char *msg, char **tempfile)
 {
   sigset_t set;
@@ -2390,10 +2446,17 @@ static char **add_option(char **args, size_t *argslen, size_t *argsmax, char *s)
   return args;
 }
 
-int mutt_invoke_sendmail(struct Address *from, /* the sender */
-                         struct Address *to, struct Address *cc, struct Address *bcc, /* recips */
-                         const char *msg, /* file containing message */
-                         int eightbit)    /* message contains 8bit chars */
+/**
+ * mutt_invoke_sendmail - Run sendmail
+ * @param from     The sender
+ * @param to       Recipients
+ * @param cc       Recipients
+ * @param bcc      Recipients
+ * @param msg      File containing message
+ * @param eightbit Message contains 8bit chars
+ */
+int mutt_invoke_sendmail(struct Address *from, struct Address *to, struct Address *cc,
+                         struct Address *bcc, const char *msg, int eightbit)
 {
   char *ps = NULL, *path = NULL, *s = NULL, *childout = NULL;
   char **args = NULL;
@@ -2407,7 +2470,7 @@ int mutt_invoke_sendmail(struct Address *from, /* the sender */
   {
     char cmd[LONG_STRING];
 
-    mutt_FormatString(cmd, sizeof(cmd), 0, MuttIndexWindow->cols, NONULL(Inews),
+    mutt_expando_format(cmd, sizeof(cmd), 0, MuttIndexWindow->cols, NONULL(Inews),
                       nntp_format_str, 0, 0);
     if (!*cmd)
     {
@@ -2559,7 +2622,11 @@ int mutt_invoke_sendmail(struct Address *from, /* the sender */
   return i;
 }
 
-/* For postponing (!final) do the necessary encodings only */
+/**
+ * mutt_prepare_envelope - Prepare an email header
+ *
+ * For postponing (!final) do the necessary encodings only
+ */
 void mutt_prepare_envelope(struct Envelope *env, int final)
 {
   char buffer[LONG_STRING];
@@ -2743,7 +2810,11 @@ int mutt_bounce_message(FILE *fp, struct Header *h, struct Address *to)
 }
 
 
-/* given a list of addresses, return a list of unique addresses */
+/**
+ * mutt_remove_duplicates - Remove duplicate addresses
+ *
+ * given a list of addresses, return a list of unique addresses
+ */
 struct Address *mutt_remove_duplicates(struct Address *addr)
 {
   struct Address *top = addr;
@@ -2800,7 +2871,9 @@ static void set_noconv_flags(struct Body *b, short flag)
   }
 }
 
-/* Handle a Fcc with multiple, comma separated entries. */
+/**
+ * mutt_write_multiple_fcc - Handle FCC with multiple, comma separated entries
+ */
 int mutt_write_multiple_fcc(const char *path, struct Header *hdr, const char *msgid,
                             int post, char *fcc, char **finalpath)
 {

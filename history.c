@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Read/write command history from/to a file
+ *
+ * @authors
  * Copyright (C) 1996-2000 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -65,6 +70,10 @@
  *                  the oldest entry in the ring
  *                  next oldest entry
  *         HistSize entry
+ */
+
+/**
+ * struct History - Saved list of user-entered commands/searches
  */
 struct History
 {
@@ -273,7 +282,7 @@ cleanup:
       hash_destroy(&dup_hashes[hclass], NULL);
 }
 
-static void save_history(history_class_t hclass, const char *s)
+static void save_history(enum HistoryClass hclass, const char *s)
 {
   static int n = 0;
   FILE *f = NULL;
@@ -314,10 +323,13 @@ static void save_history(history_class_t hclass, const char *s)
   }
 }
 
-/* When removing dups, we want the created "blanks" to be right below the
+/**
+ * remove_history_dups - De-dupe the history
+ *
+ * When removing dups, we want the created "blanks" to be right below the
  * resulting h->last position.  See the comment section above 'struct History'.
  */
-static void remove_history_dups(history_class_t hclass, const char *s)
+static void remove_history_dups(enum HistoryClass hclass, const char *s)
 {
   int source, dest, old_last;
   struct History *h = GET_HISTORY(hclass);
@@ -364,13 +376,13 @@ void mutt_init_history(void)
   if (HistSize == OldSize)
     return;
 
-  for (history_class_t hclass = HC_FIRST; hclass < HC_LAST; hclass++)
+  for (enum HistoryClass hclass = HC_FIRST; hclass < HC_LAST; hclass++)
     init_history(&History[hclass]);
 
   OldSize = HistSize;
 }
 
-void mutt_history_add(history_class_t hclass, const char *s, int save)
+void mutt_history_add(enum HistoryClass hclass, const char *s, int save)
 {
   int prev;
   struct History *h = GET_HISTORY(hclass);
@@ -402,7 +414,7 @@ void mutt_history_add(history_class_t hclass, const char *s, int save)
   h->cur = h->last; /* reset to the last entry */
 }
 
-char *mutt_history_next(history_class_t hclass)
+char *mutt_history_next(enum HistoryClass hclass)
 {
   int next;
   struct History *h = GET_HISTORY(hclass);
@@ -424,7 +436,7 @@ char *mutt_history_next(history_class_t hclass)
   return (h->hist[h->cur] ? h->hist[h->cur] : "");
 }
 
-char *mutt_history_prev(history_class_t hclass)
+char *mutt_history_prev(enum HistoryClass hclass)
 {
   int prev;
   struct History *h = GET_HISTORY(hclass);
@@ -446,7 +458,7 @@ char *mutt_history_prev(history_class_t hclass)
   return (h->hist[h->cur] ? h->hist[h->cur] : "");
 }
 
-void mutt_reset_history_state(history_class_t hclass)
+void mutt_reset_history_state(enum HistoryClass hclass)
 {
   struct History *h = GET_HISTORY(hclass);
 
@@ -456,7 +468,7 @@ void mutt_reset_history_state(history_class_t hclass)
   h->cur = h->last;
 }
 
-int mutt_history_at_scratch(history_class_t hclass)
+int mutt_history_at_scratch(enum HistoryClass hclass)
 {
   struct History *h = GET_HISTORY(hclass);
 
@@ -466,7 +478,7 @@ int mutt_history_at_scratch(history_class_t hclass)
   return h->cur == h->last;
 }
 
-void mutt_history_save_scratch(history_class_t hclass, const char *s)
+void mutt_history_save_scratch(enum HistoryClass hclass, const char *s)
 {
   struct History *h = GET_HISTORY(hclass);
 

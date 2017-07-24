@@ -1,6 +1,11 @@
 /**
+ * @file
+ * Config/command parsing
+ *
+ * @authors
  * Copyright (C) 1996-2002,2010,2013,2016 Michael R. Elkins <me@mutt.org>
  *
+ * @copyright
  * This program is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation, either version 2 of the License, or (at your option) any later
@@ -77,6 +82,9 @@
     return -1;                                                                       \
   }
 
+/**
+ * struct MyVar - A user-set variable
+ */
 struct MyVar
 {
   char *name;
@@ -227,8 +235,12 @@ int query_quadoption(int opt, const char *prompt)
   /* not reached */
 }
 
-/* given the variable ``s'', return the index into the rc_vars array which
-   matches, or -1 if the variable is not found.  */
+/**
+ * mutt_option_index - Find the index (in rc_vars) of a variable name
+ * @param s Variable name to search for
+ * @retval -1 on error
+ * @retval >0 on success
+ */
 int mutt_option_index(const char *s)
 {
   for (int i = 0; MuttVars[i].option; i++)
@@ -374,7 +386,7 @@ int mutt_option_set(const struct Option *val, struct Buffer *err)
         err2.dsize = sizeof(err_str);
 
         struct Buffer tmp;
-        tmp.data = (char *)val->data;
+        tmp.data = (char *) val->data;
         tmp.dsize = strlen((char *) val->data);
 
         if (parse_regex(idx, &tmp, &err2))
@@ -401,8 +413,7 @@ int mutt_option_set(const struct Option *val, struct Buffer *err)
         }
         else
         {
-          snprintf(err->data, err->dsize, _("%s: Unknown type."),
-                   MuttVars[idx].option);
+          snprintf(err->data, err->dsize, _("%s: Unknown type."), MuttVars[idx].option);
           return -1;
         }
         break;
@@ -436,13 +447,11 @@ int mutt_option_set(const struct Option *val, struct Buffer *err)
 
         if (!map)
         {
-          snprintf(err->data, err->dsize, _("%s: Unknown type."),
-                   MuttVars[idx].option);
+          snprintf(err->data, err->dsize, _("%s: Unknown type."), MuttVars[idx].option);
           return -1;
         }
 
-        if (parse_sort((short *) MuttVars[idx].data, (const char *) val->data,
-                       map, err) == -1)
+        if (parse_sort((short *) MuttVars[idx].data, (const char *) val->data, map, err) == -1)
         {
           return -1;
         }
@@ -529,7 +538,9 @@ static void free_opt(struct Option *p)
   }
 }
 
-/* clean up before quitting */
+/**
+ * mutt_free_opts - clean up before quitting
+ */
 void mutt_free_opts(void)
 {
   for (int i = 0; MuttVars[i].option; i++)
@@ -788,16 +799,14 @@ static void remove_from_list(struct List **l, const char *str)
 
 /**
  * finish_source - 'finish' command: stop processing current config file
- * @tmp:  Temporary space shared by all command handlers
- * @s:    Current line of the config file
- * @data: data field from init.h:struct Command
- * @err:  Buffer for any error message
+ * @param tmp  Temporary space shared by all command handlers
+ * @param s    Current line of the config file
+ * @param data data field from init.h:struct Command
+ * @param err  Buffer for any error message
+ * @retval  1 Stop processing the current file
+ * @retval -1 Failed
  *
  * If the 'finish' command is found, we should stop reading the current file.
- *
- * Returns:
- *       1 Stop processing the current file
- *      -1 Failed
  */
 static int finish_source(struct Buffer *tmp, struct Buffer *s,
                          unsigned long data, struct Buffer *err)
@@ -813,10 +822,12 @@ static int finish_source(struct Buffer *tmp, struct Buffer *s,
 
 /**
  * parse_ifdef - 'ifdef' command: conditional config
- * @tmp:  Temporary space shared by all command handlers
- * @s:    Current line of the config file
- * @data: data field from init.h:struct Command
- * @err:  Buffer for any error message
+ * @param tmp  Temporary space shared by all command handlers
+ * @param s    Current line of the config file
+ * @param data data field from init.h:struct Command
+ * @param err  Buffer for any error message
+ * @retval  0 Success
+ * @retval -1 Failed
  *
  * The 'ifdef' command allows conditional elements in the config file.
  * If a given variable, function, command or compile-time symbol exists, then
@@ -827,10 +838,6 @@ static int finish_source(struct Buffer *tmp, struct Buffer *s,
  * If (data == 1) then it means use the 'ifndef' (if-not-defined) command.
  * e.g.
  *      ifndef imap finish
- *
- * Returns:
- *       0 Success
- *      -1 Failed
  */
 static int parse_ifdef(struct Buffer *tmp, struct Buffer *s, unsigned long data,
                        struct Buffer *err)
@@ -1271,13 +1278,21 @@ bail:
   return -1;
 }
 
-typedef enum group_state_t { NONE, RX, ADDR } group_state_t;
+/**
+ * enum GroupState - Type of email address group
+ */
+enum GroupState
+{
+  GS_NONE,
+  GS_RX,
+  GS_ADDR
+};
 
 static int parse_group(struct Buffer *buf, struct Buffer *s, unsigned long data,
                        struct Buffer *err)
 {
   struct GroupContext *gc = NULL;
-  group_state_t state = NONE;
+  enum GroupState state = GS_NONE;
   struct Address *addr = NULL;
   char *estr = NULL;
 
@@ -1295,19 +1310,19 @@ static int parse_group(struct Buffer *buf, struct Buffer *s, unsigned long data,
     }
 
     if (mutt_strcasecmp(buf->data, "-rx") == 0)
-      state = RX;
+      state = GS_RX;
     else if (mutt_strcasecmp(buf->data, "-addr") == 0)
-      state = ADDR;
+      state = GS_ADDR;
     else
     {
       switch (state)
       {
-        case NONE:
+        case GS_NONE:
           snprintf(err->data, err->dsize, _("%sgroup: missing -rx or -addr."),
                    data == MUTT_UNGROUP ? "un" : "");
           goto bail;
 
-        case RX:
+        case GS_RX:
           if (data == MUTT_GROUP &&
               mutt_group_context_add_rx(gc, buf->data, REG_ICASE, err) != 0)
             goto bail;
@@ -1315,7 +1330,7 @@ static int parse_group(struct Buffer *buf, struct Buffer *s, unsigned long data,
             goto bail;
           break;
 
-        case ADDR:
+        case GS_ADDR:
           if ((addr = mutt_parse_adrlist(NULL, buf->data)) == NULL)
             goto bail;
           if (mutt_addrlist_to_intl(addr, &estr))
@@ -1345,7 +1360,9 @@ bail:
   return -1;
 }
 
-/* always wise to do what someone else did before */
+/**
+ * _attachments_clean - always wise to do what someone else did before
+ */
 static void _attachments_clean(void)
 {
   int i;
@@ -2076,7 +2093,7 @@ static void restore_default(struct Option *p)
     mutt_set_current_menu_redraw_full();
 }
 
-static void ESC_char(char c, char *p, char *dst, size_t len)
+static void esc_char(char c, char *p, char *dst, size_t len)
 {
   *p++ = '\\';
   if (p - dst < len)
@@ -2095,13 +2112,13 @@ static size_t escape_string(char *dst, size_t len, const char *src)
     switch (*src)
     {
       case '\n':
-        ESC_char('n', p, dst, len);
+        esc_char('n', p, dst, len);
         break;
       case '\r':
-        ESC_char('r', p, dst, len);
+        esc_char('r', p, dst, len);
         break;
       case '\t':
-        ESC_char('t', p, dst, len);
+        esc_char('t', p, dst, len);
         break;
       default:
         if ((*src == '\\' || *src == '"') && p - dst < len - 1)
@@ -2174,8 +2191,6 @@ char **mutt_envlist(void)
 /**
  * start_debug - prepare the debugging file
  *
- * @return nothing
- *
  * This method prepares and opens a new debug file for mutt_debug.
  */
 static void start_debug(void)
@@ -2191,8 +2206,8 @@ static void start_debug(void)
     snprintf(debugfilename, sizeof(debugfilename), "%s%d", DebugFile, i);
     snprintf(buf, sizeof(buf), "%s%d", DebugFile, i + 1);
 
-    mutt_expand_path (debugfilename, sizeof (debugfilename));
-    mutt_expand_path (buf, sizeof (buf));
+    mutt_expand_path(debugfilename, sizeof(debugfilename));
+    mutt_expand_path(buf, sizeof(buf));
     rename(debugfilename, buf);
   }
 
@@ -2206,8 +2221,6 @@ static void start_debug(void)
 
 /**
  * restart_debug - reload the debugging configuration
- *
- * @return nothing
  *
  * This method closes the old debug file is debug was enabled,
  * then reconfigure the debugging system from the configuration options
@@ -2238,13 +2251,13 @@ static void restart_debug(void)
 }
 #endif
 
-/* Helper function for parse_setenv().
+/* mutt_envlist_set - Helper function for parse_setenv()
+ * @param name      Name of the environment variable
+ * @param value     Value the envionment variable should have
+ * @param overwrite Whether the environment variable should be overwritten
+ *
  * It's broken out because some other parts of mutt (filter.c) need
  * to set/overwrite environment variables in envlist before execing.
- *
- * @param name pointer to the name of the environment variable
- * @param value pointer to the value the envionment variable should have
- * @param overwrite whether the environment variable should be overwritten
  */
 void mutt_envlist_set(const char *name, const char *value, bool overwrite)
 {
@@ -2439,7 +2452,8 @@ static int parse_set(struct Buffer *tmp, struct Buffer *s, unsigned long data,
     {
       if (query || unset || inv)
       {
-        snprintf(err->data, err->dsize, "%s", _("prefix is illegal with reset"));
+        snprintf(err->data, err->dsize, "%s",
+                 _("prefix is illegal with reset"));
         return -1;
       }
 
@@ -2453,7 +2467,8 @@ static int parse_set(struct Buffer *tmp, struct Buffer *s, unsigned long data,
       {
         if (CurrentMenu == MENU_PAGER)
         {
-          snprintf(err->data, err->dsize, "%s", _("Not available in this menu."));
+          snprintf(err->data, err->dsize, "%s",
+                   _("Not available in this menu."));
           return -1;
         }
         for (idx = 0; MuttVars[idx].option; idx++)
@@ -2480,7 +2495,8 @@ static int parse_set(struct Buffer *tmp, struct Buffer *s, unsigned long data,
       {
         if (unset || inv || query)
         {
-          snprintf(err->data, err->dsize, "%s", _("Usage: set variable=yes|no"));
+          snprintf(err->data, err->dsize, "%s",
+                   _("Usage: set variable=yes|no"));
           return -1;
         }
 
@@ -2492,7 +2508,8 @@ static int parse_set(struct Buffer *tmp, struct Buffer *s, unsigned long data,
           unset = 1;
         else
         {
-          snprintf(err->data, err->dsize, "%s", _("Usage: set variable=yes|no"));
+          snprintf(err->data, err->dsize, "%s",
+                   _("Usage: set variable=yes|no"));
           return -1;
         }
       }
@@ -2986,13 +3003,15 @@ static int parse_set(struct Buffer *tmp, struct Buffer *s, unsigned long data,
  * and avoid cyclic sourcing */
 static struct List *MuttrcStack;
 
-/* Use POSIX functions to convert a path to absolute, relatively to another path
- * Args:
- *  - path: instance containing the relative path to the file we want the absolute
- *     path of. Should be at least of PATH_MAX length, will contain the full result.
- *  - reference: path to a file which directory will be set as reference for setting
- *      up the absolute path.
- * Returns: true (1) on success, false (0) otherwise.
+/**
+ * to_absolute_path - Convert relative filepath to an absolute path
+ * @param path      Relative path
+ * @param reference Absolute path that \a path is relative to
+ * @retval true on success
+ * @retval false otherwise
+ *
+ * Use POSIX functions to convert a path to absolute, relatively to another path
+ * @note \a path should be at least of PATH_MAX length
  */
 static int to_absolute_path(char *path, const char *reference)
 {
@@ -3029,8 +3048,12 @@ static int to_absolute_path(char *path, const char *reference)
 
 #define MAXERRS 128
 
-/* reads the specified initialization file.
- * Returns negative if mutt should pause to let the user know...  */
+/**
+ * source_rc - Read an initialization file
+ * @param rcfile_path Path to initialization file
+ * @param err         Buffer for error messages
+ * @retval <0 if mutt should pause to let the user know
+ */
 static int source_rc(const char *rcfile_path, struct Buffer *err)
 {
   FILE *f = NULL;
@@ -3179,16 +3202,17 @@ static int parse_source(struct Buffer *tmp, struct Buffer *token,
   return 0;
 }
 
-/* line         command to execute
-
-   token        scratch buffer to be used by parser.  caller should free
-                token->data when finished.  the reason for this variable is
-                to avoid having to allocate and deallocate a lot of memory
-                if we are parsing many lines.  the caller can pass in the
-                memory to use, which avoids having to create new space for
-                every call to this function.
-
-   err          where to write error messages */
+/**
+ * mutt_parse_rc_line - Parse a line of user config
+ * @param line  config line to read
+ * @param token scratch buffer to be used by parser
+ * @param err   where to write error messages
+ *
+ * Caller should free token->data when finished.  the reason for this variable
+ * is to avoid having to allocate and deallocate a lot of memory if we are
+ * parsing many lines.  the caller can pass in the memory to use, which avoids
+ * having to create new space for every call to this function.
+ */
 int mutt_parse_rc_line(/* const */ char *line, struct Buffer *token, struct Buffer *err)
 {
   int i, r = 0;
@@ -3268,12 +3292,14 @@ static void matches_ensure_morespace(int current)
   }
 }
 
-/* helper function for completion.  Changes the dest buffer if
-   necessary/possible to aid completion.
-        dest == completion result gets here.
-        src == candidate for completion.
-        try == user entered data for completion.
-        len == length of dest buffer.
+/**
+ * candidate - helper function for completion
+ * @param dest Completion result gets here
+ * @param src  Candidate for completion
+ * @param try  User entered data for completion
+ * @param len  Length of dest buffer
+ *
+ * Changes the dest buffer if necessary/possible to aid completion.
 */
 static void candidate(char *dest, char *try, const char *src, int len)
 {
@@ -3518,8 +3544,8 @@ int mutt_var_value_complete(char *buffer, size_t len, int pos)
 
 #ifdef USE_NOTMUCH
 
-/* Fetch a list of all notmuch tags and insert them into the completion
- * machinery.
+/**
+ * complete_all_nm_tags - Pass a list of notmuch tags to the completion code
  */
 static int complete_all_nm_tags(const char *pt)
 {
@@ -3571,7 +3597,10 @@ done:
   return 0;
 }
 
-/* Return the last instance of needle in the haystack, or NULL.
+/**
+ * rstrnstr - Find last instance of a substring
+ *
+ * Return the last instance of needle in the haystack, or NULL.
  * Like strstr(), only backwards, and for a limited haystack length.
  */
 static const char *rstrnstr(const char *haystack, size_t haystack_length, const char *needle)
@@ -3594,7 +3623,11 @@ static const char *rstrnstr(const char *haystack, size_t haystack_length, const 
   return NULL;
 }
 
-/* Complete the nearest "tag:"-prefixed string previous to pos. */
+/**
+ * mutt_nm_query_complete - Complete to the nearest notmuch tag
+ *
+ * Complete the nearest "tag:"-prefixed string previous to pos.
+ */
 bool mutt_nm_query_complete(char *buffer, size_t len, int pos, int numtabs)
 {
   char *pt = buffer;
@@ -3639,7 +3672,11 @@ bool mutt_nm_query_complete(char *buffer, size_t len, int pos, int numtabs)
   return true;
 }
 
-/* Complete the nearest "+" or "-" -prefixed string previous to pos. */
+/**
+ * mutt_nm_tag_complete - Complete to the nearest notmuch tag
+ *
+ * Complete the nearest "+" or "-" -prefixed string previous to pos.
+ */
 bool mutt_nm_tag_complete(char *buffer, size_t len, int pos, int numtabs)
 {
   if (!buffer)
@@ -3782,7 +3819,9 @@ int var_to_string(int idx, char *val, size_t len)
   return 1;
 }
 
-/* Implement the -Q command line flag */
+/**
+ * mutt_query_variables - Implement the -Q command line flag
+ */
 int mutt_query_variables(struct List *queries)
 {
   struct List *p = NULL;
@@ -3817,7 +3856,9 @@ int mutt_query_variables(struct List *queries)
   return 0;
 }
 
-/* dump out the value of all the variables we have */
+/**
+ * mutt_dump_variables - Print a list of all variables with their values
+ */
 int mutt_dump_variables(int hide_sensitive)
 {
   char command[STRING];
@@ -3902,11 +3943,7 @@ static int execute_commands(struct List *p)
 static char *find_cfg(const char *home, const char *xdg_cfg_home)
 {
   const char *names[] = {
-    "neomuttrc-" PACKAGE_VERSION,
-    "neomuttrc",
-    "muttrc-" MUTT_VERSION,
-    "muttrc",
-    NULL,
+    "neomuttrc-" PACKAGE_VERSION, "neomuttrc", "muttrc-" MUTT_VERSION, "muttrc", NULL,
   };
 
   const char *locations[][2] = {
@@ -3955,8 +3992,7 @@ void mutt_init(int skip_sys_rc, struct List *commands)
 
   Groups = hash_create(1031, 0);
   /* reverse alias keys need to be strdup'ed because of idna conversions */
-  ReverseAlias = hash_create(1031, MUTT_HASH_STRCASECMP | MUTT_HASH_STRDUP_KEYS |
-                                       MUTT_HASH_ALLOW_DUPS);
+  ReverseAlias = hash_create(1031, MUTT_HASH_STRCASECMP | MUTT_HASH_STRDUP_KEYS | MUTT_HASH_ALLOW_DUPS);
 #ifdef USE_NOTMUCH
   TagTransforms = hash_create(64, 1);
   TagFormats = hash_create(64, 0);
@@ -4017,7 +4053,7 @@ void mutt_init(int skip_sys_rc, struct List *commands)
     {
       int i = mutt_option_index("debug_file");
       if ((i >= 0) && (MuttVars[i].init != 0))
-        DebugFile = safe_strdup((const char*) MuttVars[i].init);
+        DebugFile = safe_strdup((const char *) MuttVars[i].init);
     }
     start_debug();
   }
@@ -4181,7 +4217,7 @@ void mutt_init(int skip_sys_rc, struct List *commands)
    * The creator of a mailto URL cannot expect the resolver of a URL to
    * understand more than the "subject" and "body" headers. Clients that
    * resolve mailto URLs into mail messages should be able to correctly
-   * create RFC 822-compliant mail messages using the "subject" and "body"
+   * create RFC822-compliant mail messages using the "subject" and "body"
    * headers.
    */
   add_to_list(&MailtoAllow, "body");
@@ -4238,7 +4274,7 @@ void mutt_init(int skip_sys_rc, struct List *commands)
   {
     do
     {
-      if (mutt_set_xdg_path(kXDGConfigDirs, buffer, sizeof(buffer)))
+      if (mutt_set_xdg_path(XDG_CONFIG_DIRS, buffer, sizeof(buffer)))
         break;
 
       snprintf(buffer, sizeof(buffer), "%s/neomuttrc-%s", SYSCONFDIR, PACKAGE_VERSION);
